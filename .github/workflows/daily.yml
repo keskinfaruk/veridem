@@ -1,0 +1,136 @@
+name: Daily data refresh
+
+# Runs src/daily_run.py on a schedule: fetches every watched TUIK + Eurostat
+# + TUIK-press indicator, diffs each dataflow's fresh snapshot against its
+# previous one, and opens a PR only if something substantive changed (see
+# daily_run.py's module docstring). No change -> the job just ends quietly,
+# nothing to review.
+#
+# TUIK-press fetching needs no new secret -- the press API takes no auth,
+# just an X-Requested-With header (see tuik_press_client.py) -- but does
+# need `xlrd` in requirements.txt to parse the .xls tables it returns;
+# don't drop that dependency.
+#
+# Manual setup this workflow depends on (not done by any code path):
+#   - TUIK_API_KEY repository secret (Settings -> Secrets and variables ->
+#     Actions -> New repository secret)
+#   - BLUESKY_DATA_HANDLE / BLUESKY_DATA_APP_PASSWORD repository secrets,
+#     same place, for the instant-notice Bluesky account -- until these
+#     exist, daily_run.py still updates changes.xml correctly but the
+#     Bluesky step fails with a clear "credentials not configured" error,
+#     which is why the run exits non-zero (not silently) until they're added
+#   - Settings -> Actions -> General -> Workflow permissions ->
+#     "Read and write permissions" (needed for this workflow to push a
+#     branch and open a PR with the default GITHUB_TOKEN)
+#   - WEBPAGE_PAT repository secret: a fine-grained GitHub PAT with
+#     contents:write on the target site repo only, used to sync
+#     changes.xml + veridem/index.html there directly (no PR)
+#
+# Also runs post_baseline_notice.py, which drains the one-time baseline-
+# notice queue (see baseline_notice.py), at most once a day, reusing the
+# same Bluesky/WEBPAGE_PAT secrets above. The webpage repo is checked out
+# unconditionally, early, so its persisted changes.xml can seed this run's
+# local copy before *either* the real change-notice path (daily_run.py) or
+# the baseline path appends to it -- without this, a fresh checkout has no
+# local changes.xml to prepend onto (it's deliberately never committed to
+# this repo's own git, see feed.py), and syncing would silently overwrite
+# the real public history with just this run's new entries.
+
+on:
+  schedule:
+    # 07:30 UTC = 10:30 Turkiye Time (TRT, fixed UTC+3 year-round -- Turkey
+    # abolished DST in 2016, so this never needs a seasonal adjustment).
+    # TUIK's own publications go out at 10:00 TRT; this is a 30-minute
+    # buffer after that, not before it -- the previous 06:00 UTC schedule
+    # ran an hour *before* TUIK's publish time and would have missed a
+    # same-day release until the next day's run.
+    - cron: "30 7 * * *"
+  workflow_dispatch: {} # manual trigger, for testing without waiting on the cron
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    # Safeguard, not a normal-case budget (a real run takes a few minutes).
+    # This exists so a genuine hang (e.g. TUIK accepting a connection but
+    # never responding, which timeout= and retries don't catch) fails
+    # loudly within the hour instead of sitting "running" for GitHub's
+    # 6-hour default and never sending a failure email at all.
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Checked out early and unconditionally now (used to be conditional,
+      # after the main run) so its persisted changes.xml can seed this run's
+      # local copy before anything appends to it -- see the module docstring
+      # above for why. Read-only use until the sync step below.
+      - name: Checkout webpage repo
+        uses: actions/checkout@v4
+        with:
+          repository: keskinfaruk/webpage
+          token: ${{ secrets.WEBPAGE_PAT }}
+          path: webpage
+
+      - name: Run daily fetch and diff
+        id: run
+        working-directory: src
+        env:
+          TUIK_API_KEY: ${{ secrets.TUIK_API_KEY }}
+          BLUESKY_DATA_HANDLE: ${{ secrets.BLUESKY_DATA_HANDLE }}
+          BLUESKY_DATA_APP_PASSWORD: ${{ secrets.BLUESKY_DATA_APP_PASSWORD }}
+        run: python daily_run.py
+
+      # A failed step above already makes this workflow run show red in the
+      # Actions tab, and GitHub emails the repo owner about failed scheduled
+      # workflow runs by default -- that's the whole failure-notification
+      # mechanism, deliberately, rather than a second custom-built one.
+
+      - name: Open or update PR
+        if: steps.run.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          title: "Data update"
+          body-path: CHANGE_REPORT.md
+          branch: daily-data-update
+          commit-message: "Daily data update"
+          delete-branch: true
+          add-paths: |
+            data/raw/**
+            data/inventory/**
+
+      - name: Post next baseline notice (one-time backfill queue)
+        id: baseline
+        working-directory: src
+        env:
+          BLUESKY_DATA_HANDLE: ${{ secrets.BLUESKY_DATA_HANDLE }}
+          BLUESKY_DATA_APP_PASSWORD: ${{ secrets.BLUESKY_DATA_APP_PASSWORD }}
+        run: python post_baseline_notice.py ../webpage
+
+      - name: Sync changes feed to faruk.page
+        if: steps.run.outputs.has_tr_notice == 'true' || steps.baseline.outputs.posted_baseline == 'true'
+        working-directory: src
+        run: python sync_webpage.py ../webpage
+
+      # Records which baseline entry was posted so tomorrow's run doesn't
+      # repeat it -- direct commit to main, no PR, same reasoning as the
+      # feed sync above: bookkeeping, not interpretation, nothing to review.
+      - name: Commit baseline queue progress
+        if: steps.baseline.outputs.posted_baseline == 'true'
+        run: |
+          git config user.name "veridem-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/baseline_notices_queue.json
+          git commit -m "Baseline notice: mark next entry posted"
+          git push

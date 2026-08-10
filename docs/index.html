@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>veridem</title>
+<meta name="description" content="A demographic data bank and monitoring system for Türkiye — dashboard in progress.">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #6b6b6b;
+    --accent: #b5432b;
+    --border: #e4e4e4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14120f;
+      --fg: #ededed;
+      --muted: #a3a3a3;
+      --accent: #e08066;
+      --border: #2c2a26;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.55;
+  }
+  main {
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 4.5rem 1.5rem 3rem;
+  }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-weight: 600;
+    margin: 0 0 0.75rem;
+  }
+  h1 {
+    font-size: 2rem;
+    margin: 0 0 0.5rem;
+    letter-spacing: -0.01em;
+  }
+  .subhead {
+    color: var(--muted);
+    font-size: 1.05rem;
+    margin: 0 0 2.5rem;
+  }
+  p { margin: 0 0 1rem; }
+  .links {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  a:hover { text-decoration: underline; }
+  footer {
+    margin-top: 3rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">veridem</p>
+  <h1>Dashboard under construction</h1>
+  <p class="subhead">This page is a placeholder — nothing to see yet, honestly.</p>
+
+  <p>
+    veridem watches TÜİK, Eurostat, and UN demographic sources for Türkiye,
+    detects substantive changes against its own stored history, and turns
+    each one into a reviewed report before anything gets published. The
+    interactive dashboard that will live here — indicator pages, charts,
+    provincial breakdowns — hasn't been built yet.
+  </p>
+
+  <div class="links">
+    <a href="https://faruk.page/veridem/">Live change feed — every detected update, as it happens</a>
+    <a href="https://faruk.page/blog/">Blog — narrative posts about the data</a>
+    <a href="https://faruk.page/">faruk.page</a>
+  </div>
+
+  <footer>veridem — a project by Faruk Keskin</footer>
+</main>
+</body>
+</html>

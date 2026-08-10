@@ -1,0 +1,35 @@
+source,agency,dataflow_id,version,selector_dim,source_indicator_code,indicator,age_dim,sex_dim,fixed_dim,fixed_value,unit,description
+tuik,TR,DF_DOGUM_TEMEL_DOG_GOST,1.0,,NG_TDH,TFR,,,,,,Total fertility rate
+tuik,TR,DF_DOGUM_YASA_OZEL_DOGHIZ,1.0,,NG_DH_B,ASFR,ANNE_YAS_GRUP,,,,,Age-specific fertility rate
+tuik,TR,DF_DOGUM_ANNE_ORTYAS,1.0,,NG_AOY,MEAN_AGE_CHILDBEARING,,,,,,Mean age of mother at childbearing
+tuik,TR,DF_DOGUM_KDH,1.0,,NG_KDH,CBR,,,,,,Crude birth rate
+tuik,TR,DF_EVLENME_ORT_ILK_YAS,1.0,,NG_OIEY,MEAN_AGE_FIRST_MARRIAGE,,SEX,,,,Mean age at first marriage
+eurostat,ESTAT,DEMO_GIND,1.0,indic_de,GBIRTHRT,CBR,,,,,PER_1000,Crude birth rate
+eurostat,ESTAT,DEMO_GIND,1.0,indic_de,GDEATHRT,CDR,,,,,PER_1000,Crude death rate
+eurostat,ESTAT,DEMO_GIND,1.0,indic_de,NATGROWRT,NATURAL_GROWTH_RATE,,,,,PER_1000,Crude rate of natural population change
+eurostat,ESTAT,DEMO_GIND,1.0,indic_de,GROWRT,POP_GROWTH_RATE,,,,,PER_1000,Crude rate of total population change
+eurostat,ESTAT,DEMO_GIND,1.0,indic_de,JAN,POP_JAN1,,,,,PERSONS,Population on 1 January
+eurostat,ESTAT,DEMO_FIND,1.0,indic_de,TOTFERRT,TFR,,,,,CHILDREN_PER_WOMAN,Total fertility rate
+eurostat,ESTAT,DEMO_FIND,1.0,indic_de,AGEMOTH,MEAN_AGE_CHILDBEARING,,,,,YEARS,Mean age of women at childbearing
+eurostat,ESTAT,DEMO_MLEXPEC,1.0,age,Y_LT1,LIFE_EXPECTANCY_BIRTH,,sex,unit,YR,YEARS,Life expectancy at birth
+eurostat,ESTAT,DEMO_MLEXPEC,1.0,age,Y15,LIFE_EXPECTANCY_15,,sex,unit,YR,YEARS,Life expectancy at age 15
+eurostat,ESTAT,DEMO_MLEXPEC,1.0,age,Y65,LIFE_EXPECTANCY_65,,sex,unit,YR,YEARS,Life expectancy at age 65
+eurostat,ESTAT,DEMO_MINFIND,1.0,indic_de,INFMORRT,INFANT_MORTALITY_RATE,,,unit,RT,PER_1000_LIVE_BIRTHS,Infant mortality rate
+tuik_press,TR,PRESS_BASIC_FERTILITY_INDICATORS,,,col1,TOTAL_BIRTHS,,,,,PERSONS,Number of live births -- press-portal Excel table (see fetch_tuik_press_indicators.py); not SDMX; distinct source from 'tuik'
+tuik_press,TR,PRESS_BASIC_FERTILITY_INDICATORS,,,col2,CBR,,,,,PER_1000,Crude birth rate -- press-portal source; see TOTAL_BIRTHS row above
+tuik_press,TR,PRESS_BASIC_FERTILITY_INDICATORS,,,col3,TFR,,,,,CHILDREN_PER_WOMAN,Total fertility rate -- press-portal source; usually ahead of the SDMX 'tuik' series by several months
+tuik_press,TR,PRESS_BASIC_FERTILITY_INDICATORS,,,col4,ADOLESCENT_FERTILITY_RATE,,,,,PER_1000,Adolescent (15-19) fertility rate -- stated directly by this table; SDMX has no dedicated dataflow -- only derivable from ASFR
+tuik_press,TR,PRESS_BASIC_FERTILITY_INDICATORS,,,col5,MEAN_AGE_CHILDBEARING,,,,,YEARS,Mean age of mother at childbearing -- press-portal source; see TOTAL_BIRTHS row above
+tuik_press,TR,PRESS_BASIC_FERTILITY_INDICATORS,,,col6,MEAN_AGE_FIRST_BIRTH,,,,,YEARS,Mean age of mother at birth of first child -- no SDMX equivalent
+tuik_press,TR,PRESS_BASIC_MORTALITY_INDICATORS,,,Number of deaths,TOTAL_DEATHS,,sex,,,PERSONS,Total deaths by sex -- TUIK publishes zero mortality statistics via SDMX; this table is the first native (non-Eurostat-proxy) source in the data bank
+tuik_press,TR,PRESS_BASIC_MORTALITY_INDICATORS,,,Crude death rate,CDR,,,,,PER_1000,Crude death rate -- native TUIK; see TOTAL_DEATHS row above; compare against the existing Eurostat-sourced CDR
+tuik_press,TR,PRESS_BASIC_MORTALITY_INDICATORS,,,Number of Infant deaths,INFANT_DEATHS,,sex,,,PERSONS,Infant deaths by sex -- native TUIK; no SDMX equivalent
+tuik_press,TR,PRESS_BASIC_MORTALITY_INDICATORS,,,Infant mortality rate,INFANT_MORTALITY_RATE,,sex,,,PER_1000,Infant mortality rate by sex -- native TUIK; compare against the existing Eurostat-sourced IMR which has no sex breakdown
+tuik_press,TR,PRESS_BASIC_MORTALITY_INDICATORS,,,Number of under five deaths,UNDER5_DEATHS,,sex,,,PERSONS,Under-five deaths by sex -- native TUIK; no SDMX equivalent
+tuik_press,TR,PRESS_BASIC_MORTALITY_INDICATORS,,,Under five mortality rate,UNDER5_MORTALITY_RATE,,sex,,,PER_1000,Under-five mortality rate by sex -- no SDMX equivalent
+tuik_press,TR,PRESS_BASIC_MORTALITY_INDICATORS,,,Number of neonatal deaths,NEONATAL_DEATHS,,sex,,,PERSONS,Neonatal deaths by sex -- native TUIK; no SDMX equivalent
+tuik_press,TR,PRESS_BASIC_MORTALITY_INDICATORS,,,Neonatal mortality rate,NEONATAL_MORTALITY_RATE,,sex,,,PER_1000,Neonatal mortality rate by sex -- no SDMX equivalent
+tuik_press,TR,PRESS_BASIC_MORTALITY_INDICATORS,,,Number of post neonatal deaths,POST_NEONATAL_DEATHS,,sex,,,PERSONS,Post-neonatal deaths by sex -- native TUIK; no SDMX equivalent
+tuik_press,TR,PRESS_BASIC_MORTALITY_INDICATORS,,,Post neonatal mortality rate,POST_NEONATAL_MORTALITY_RATE,,sex,,,PER_1000,Post-neonatal mortality rate by sex -- no SDMX equivalent
+tuik_press,TR,PRESS_INTERNAL_MIGRATION_VOLUME,,,Population migrated across provinces,INTERNAL_MIGRATION_VOLUME,,sex,,,PERSONS,National count of people who changed province of residence by sex -- TUIK publishes zero migration statistics via SDMX at all; national-level only (province-level needs NUTS-3 ref_area codes, not yet built)
+tuik_press,TR,PRESS_INTERNAL_MIGRATION_VOLUME,,,Proportion of population migrated across provinces,INTERNAL_MIGRATION_RATE,,sex,,,PERCENT,Share of population that changed province of residence by sex -- see INTERNAL_MIGRATION_VOLUME row above

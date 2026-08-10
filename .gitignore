@@ -1,0 +1,29 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Data snapshots and DuckDB files ARE committed deliberately (they're what
+# the PR review gate shows you) — nothing data-related is ignored here.
+
+# Transient: daily_run.py writes this as the PR body source, never meant to
+# be a tracked file itself. Ignored so a stray `git add -A` never commits it.
+CHANGE_REPORT.md
+
+# Transient: veridem's own working copy of the instant-notice feed, rebuilt
+# every run from the persisted copy synced to the webpage repo (see
+# feed.py's docstring, sync_webpage.py, post_baseline_notice.py). Never
+# meant to be tracked here itself -- the webpage repo's copy is the
+# permanent record.
+/changes.xml
+
+# OS / editor
+.vscode/
+.DS_Store
+Thumbs.db

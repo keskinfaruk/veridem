@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software or the data it publishes, please cite it as below."
+title: "veridem: a demographic data bank and change-monitoring pipeline for Türkiye"
+abstract: >-
+  Watches official demographic statistics for Türkiye and Europe (TurkStat
+  SDMX, TurkStat press releases, Eurostat), detects substantive changes
+  against its own stored history, and publishes what changed via an Atom
+  feed and change reports.
+authors:
+  - family-names: Keskin
+    given-names: Faruk
+repository-code: "https://github.com/keskinfaruk/veridem"
+license: MIT
+type: software
+keywords:
+  - demography
+  - Türkiye
+  - Turkey
+  - official statistics
+  - SDMX
+  - TurkStat
+  - Eurostat
+  - open data
