@@ -2,9 +2,16 @@ name: Daily data refresh
 
 # Runs src/daily_run.py on a schedule: fetches every watched TUIK + Eurostat
 # + TUIK-press indicator, diffs each dataflow's fresh snapshot against its
-# previous one, and opens a PR only if something substantive changed (see
-# daily_run.py's module docstring). No change -> the job just ends quietly,
-# nothing to review.
+# previous one, and opens a PR only if a demographic indicator's value
+# substantively changed (see daily_run.py's module docstring). No change ->
+# the job just ends quietly, nothing to review.
+#
+# A catalogue-level change (TUIK's own service adding/removing a dataflow or
+# bumping a DSD version -- not a demographic figure) never opens a PR at
+# all: it's appended to data/technical_changes_log.md and committed straight
+# to main (see "Commit technical changes log" below and technical_log.py) --
+# private bookkeeping for the project owner, not something to review or
+# publish.
 #
 # TUIK-press fetching needs no new secret -- the press API takes no auth,
 # just an X-Requested-With header (see tuik_press_client.py) -- but does
@@ -21,7 +28,12 @@ name: Daily data refresh
 #     which is why the run exits non-zero (not silently) until they're added
 #   - Settings -> Actions -> General -> Workflow permissions ->
 #     "Read and write permissions" (needed for this workflow to push a
-#     branch and open a PR with the default GITHUB_TOKEN)
+#     branch and open a PR with the default GITHUB_TOKEN) AND, a separate
+#     checkbox below it, "Allow GitHub Actions to create and approve pull
+#     requests" -- without this second one, "Open or update PR" fails with
+#     "GitHub Actions is not permitted to create or approve pull requests"
+#     even though pushing the branch itself succeeds (hit for real
+#     2026-08-11, fixed via the Actions API rather than by hand)
 #   - WEBPAGE_PAT repository secret: a fine-grained GitHub PAT with
 #     contents:write on the target site repo only, used to sync
 #     changes.xml + veridem/index.html there directly (no PR)
@@ -108,7 +120,23 @@ jobs:
           delete-branch: true
           add-paths: |
             data/raw/**
-            data/inventory/**
+
+      # Catalogue-level changes (see daily_run.py's module docstring) --
+      # direct commit to main, no PR, same reasoning as the baseline-queue
+      # commit below: bookkeeping/reference material for the project owner,
+      # nothing here needs a human's review-before-merge the way an actual
+      # data change does. Includes the TUIK dataflow inventory snapshot
+      # itself (data/inventory/**), not just the log, so tomorrow's run
+      # diffs against today's real catalogue state instead of re-detecting
+      # the same catalogue change again.
+      - name: Commit technical changes log
+        if: steps.run.outputs.has_technical_changes == 'true'
+        run: |
+          git config user.name "veridem-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/technical_changes_log.md data/inventory
+          git commit -m "Technical changes log: catalogue update"
+          git push
 
       - name: Post next baseline notice (one-time backfill queue)
         id: baseline

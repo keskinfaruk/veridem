@@ -13,9 +13,17 @@ The daily run -- the one script the GitHub Actions cron workflow calls:
        every one of those forever would turn "immutable snapshot history"
        into mostly noise. Exiting silently on no change means no action at
        all, not a silent commit of a redundant file.
-    4. Whatever *did* change gets kept, written into a change report, and
+    4. Whatever *did* change gets kept. A demographic data change (an
+       indicator's actual value) gets written into a change report and
        signalled to the workflow (`has_changes` in $GITHUB_OUTPUT) so it
-       knows whether to open a PR.
+       knows whether to open a PR -- that's the only kind of change this
+       project publishes anywhere. A catalogue-level change (a dataflow
+       appearing/disappearing, a DSD version bump -- TUIK's own service
+       changing shape, not a demographic figure) never goes through the PR
+       or any public channel at all; it's appended to a private log
+       (technical_log.py) that daily.yml commits straight to main
+       (`has_technical_changes` in $GITHUB_OUTPUT), for the project owner's
+       own reference, not for publication.
 
 Failure handling: every fetch step is isolated so one source's outage
 never blocks detecting real changes in another source. But the run still
@@ -59,6 +67,7 @@ from feed import append_notices
 from instant_notice import build_notices
 from report import generate_change_report
 from schema import INVENTORY_DIR, RAW_DIR, connect
+from technical_log import append_entry as append_technical_log_entry
 
 REPORT_PATH = Path(__file__).resolve().parent.parent / "CHANGE_REPORT.md"
 
@@ -175,7 +184,7 @@ def main() -> int:
     obs_changes, inv_changes = _prune_unchanged_and_collect_changes()
 
     con = connect()  # fresh connection: some snapshot files were just deleted above
-    report_text = generate_change_report(obs_changes, con, inv_changes)
+    report_text = generate_change_report(obs_changes, con)
     has_changes = bool(report_text)
     has_tr_notice = False
 
@@ -190,11 +199,30 @@ def main() -> int:
     if not has_changes:
         print("\nNo changes detected. Exiting quietly.")
 
+    # Catalogue-level changes (NEW_DATAFLOW/DATAFLOW_WITHDRAWN/STRUCTURAL):
+    # never a demographic figure, so never CHANGE_REPORT.md/the PR and never
+    # posted anywhere -- just a private log, committed straight to main by
+    # daily.yml (see technical_log.py's module docstring for why no PR).
+    print("\n=== Technical changes log (catalogue-level, private) ===")
+    has_technical_changes = False
+    if inv_changes.empty:
+        print("No catalogue-level changes.")
+    else:
+        try:
+            has_technical_changes = append_technical_log_entry(inv_changes)
+            print(f"Logged {len(inv_changes)} catalogue change(s) to data/technical_changes_log.md")
+        except Exception as e:  # noqa: BLE001 -- a log-write failure must not
+            # block has_changes/has_tr_notice from being reported correctly.
+            print(f"ERROR: technical changes log write failed: {e}", file=sys.stderr)
+            traceback.print_exc()
+            errors.append(f"technical changes log write failed: {e}")
+
     github_output = os.environ.get("GITHUB_OUTPUT")
     if github_output:
         with open(github_output, "a", encoding="utf-8") as f:
             f.write(f"has_changes={'true' if has_changes else 'false'}\n")
             f.write(f"has_tr_notice={'true' if has_tr_notice else 'false'}\n")
+            f.write(f"has_technical_changes={'true' if has_technical_changes else 'false'}\n")
 
     if errors:
         print(f"\n{len(errors)} error(s) during this run:", file=sys.stderr)

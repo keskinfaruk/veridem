@@ -177,10 +177,18 @@ TREND_AVERAGE_WINDOW = 5
 # Report priority order, most newsworthy first: a fresh period is the main
 # event, structural/DSD changes are lowest priority (parser risk, not
 # necessarily new data).
-CLASS_ORDER = [
-    "NEW_PERIOD", "REVISED", "WITHDRAWN", "NEW_SERIES",
-    "NEW_DATAFLOW", "DATAFLOW_WITHDRAWN", "STRUCTURAL",
-]
+#
+# Split in two, not one combined CLASS_ORDER, because these go to two
+# different audiences now: OBS_CLASS_ORDER is what generate_change_report()
+# renders into CHANGE_REPORT.md/the PR -- demographic data changes, the
+# thing this project actually publishes and the only thing worth a human's
+# review. TECHNICAL_CLASS_ORDER (catalogue-level: a dataflow appearing,
+# disappearing, or its DSD version bumping) never goes into a PR at all --
+# see technical_log.py, which renders these same classes into a private,
+# directly-committed log instead. CLASS_HEADINGS stays one shared dict
+# since both renderers use the same per-class heading text.
+OBS_CLASS_ORDER = ["NEW_PERIOD", "REVISED", "WITHDRAWN", "NEW_SERIES"]
+TECHNICAL_CLASS_ORDER = ["NEW_DATAFLOW", "DATAFLOW_WITHDRAWN", "STRUCTURAL"]
 CLASS_HEADINGS = {
     "NEW_PERIOD": "New periods",
     "REVISED": "Revisions",
@@ -432,14 +440,21 @@ def _inventory_block(row: pd.Series) -> str:
 def generate_change_report(
     obs_changes: pd.DataFrame,
     con,
-    inventory_changes: pd.DataFrame | None = None,
     include_sanity: bool = True,
     public: bool = False,
 ) -> str:
-    """Build the full text change report from diff_observations()-shaped and
-    diff_inventory()-shaped DataFrames. Returns "" if there is nothing to
-    report at all -- treat that as "no notification", never send an empty
-    report anywhere.
+    """Build the full text change report from a diff_observations()-shaped
+    DataFrame -- demographic data changes only. Returns "" if there is
+    nothing to report at all -- treat that as "no notification", never send
+    an empty report anywhere.
+
+    Catalogue-level changes (NEW_DATAFLOW/DATAFLOW_WITHDRAWN/STRUCTURAL)
+    never come through here -- they're not a demographic figure changing,
+    just TUIK's own service catalogue changing shape, so they don't belong
+    in the one document a human actually reviews before merging. See
+    technical_log.py, which renders those same three classes (reusing
+    _inventory_block() below) into a private, directly-committed log
+    instead.
 
     `include_sanity`: CHANGE_REPORT.md (the PR document actually reviewed
     before merging) keeps the [ok]/[warn] sanity-check lines by default --
@@ -458,16 +473,12 @@ def generate_change_report(
     "ADOLESCENT_FERTILITY_RATE, TR", matching what baseline notices, the
     Atom entry title, and the Bluesky text already show.
     """
-    inventory_changes = inventory_changes if inventory_changes is not None else pd.DataFrame()
-    if obs_changes.empty and inventory_changes.empty:
+    if obs_changes.empty:
         return ""
 
     sections = []
-    for change_class in CLASS_ORDER:
-        if change_class in ("NEW_DATAFLOW", "DATAFLOW_WITHDRAWN", "STRUCTURAL"):
-            rows = inventory_changes[inventory_changes["change_class"] == change_class] if not inventory_changes.empty else inventory_changes
-        else:
-            rows = obs_changes[obs_changes["change_class"] == change_class] if not obs_changes.empty else obs_changes
+    for change_class in OBS_CLASS_ORDER:
+        rows = obs_changes[obs_changes["change_class"] == change_class]
         if rows.empty:
             continue
 
@@ -481,8 +492,6 @@ def generate_change_report(
                 blocks.append(_withdrawn_block(row, public))
             elif change_class == "NEW_SERIES":
                 blocks.append(_new_series_block(row, con, include_sanity, public))
-            else:
-                blocks.append(_inventory_block(row))
 
         heading = f"## {CLASS_HEADINGS[change_class]} ({len(rows)})"
         sections.append(heading + "\n\n" + "\n\n".join(blocks))
