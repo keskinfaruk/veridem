@@ -2,23 +2,14 @@
 Append-only, private log of catalogue-level ("technical") changes --
 NEW_DATAFLOW, DATAFLOW_WITHDRAWN, STRUCTURAL.
 
-These are distinct from demographic data changes (NEW_PERIOD/REVISED/
-WITHDRAWN/NEW_SERIES on an actual indicator value, see report.py /
-diff.py): a technical change means TUIK's own service catalogue changed
-shape -- a dataflow appeared, disappeared, or its DSD version bumped -- not
-that a demographic figure moved. Confirmed real, not hypothetical: TUIK
-withdrew 23 marriage/divorce dataflows between two inventory snapshots on
-2026-08-11 (see dataflow_inventory.py).
-
-Never posted anywhere public, and deliberately never goes through a PR --
-there's nothing here for a human to approve before it's safe to keep
-permanently, unlike an actual data change. daily.yml commits this file
-directly to main after any run with catalogue changes, same direct-push
-pattern already used for baseline_notice.py's queue-progress bookkeeping.
-Kept only for the project owner's own reference -- e.g. noticing TUIK
-quietly discontinued its divorce statistics is useful raw material for a
-blog post, even though the withdrawal itself is never worth a public post
-the way a new TFR figure is.
+Distinct from demographic data changes (NEW_PERIOD/REVISED/WITHDRAWN/
+NEW_SERIES on an actual indicator value, see report.py/diff.py): a
+technical change means TUIK's own service catalogue changed shape, not
+that a demographic figure moved. Never posted anywhere public and never
+goes through a PR -- daily.yml commits this file straight to main (same
+pattern as baseline_notice.py's queue-progress bookkeeping). Kept only as
+reference material for the project owner's own blog writing. See
+ROADMAP_LOG.md for the investigation that led to this.
 """
 
 from datetime import datetime, timezone

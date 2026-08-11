@@ -49,10 +49,8 @@ import requests
 
 BASE_URL = "https://veriportali.tuik.gov.tr"
 
-# Same rationale as tuik_client.py's _with_retries: veriportali.tuik.gov.tr
-# throws transient read timeouts under load even when otherwise healthy.
-# Retry those -- and only those, never an HTTP error status -- with a short
-# backoff before giving up.
+# Same rationale as tuik_client.py's _with_retries: retry transient
+# timeouts/connection errors only, never an HTTP error status.
 MAX_RETRIES = 3
 RETRY_BACKOFF_SECONDS = 5
 

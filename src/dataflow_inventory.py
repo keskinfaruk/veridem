@@ -91,11 +91,10 @@ def latest_two_inventory_snapshots(con) -> tuple[str | None, str | None]:
 def diff_inventory(con, old_snapshot_id: str | None, new_snapshot_id: str) -> pd.DataFrame:
     """Classify catalogue-level changes between two inventory snapshots.
 
-    A dataflow_id present in `old` but missing from `new` is DATAFLOW_WITHDRAWN
-    -- TÜİK does occasionally pull a whole dataflow, not just individual
-    values within one (confirmed 2026-08-11: DF_EVLENME_ORT_ILK_YAS and its
-    13 sibling marriage-statistics dataflows all vanished from the live
-    catalogue between two inventory snapshots taken two days apart).
+    A dataflow_id present in `old` but missing from `new` is
+    DATAFLOW_WITHDRAWN -- TÜİK does occasionally pull a whole dataflow, not
+    just individual values within one. See ROADMAP_LOG.md for how this was
+    discovered.
     """
     new = con.execute("SELECT * FROM dataflow_inventory WHERE snapshot_id = ?", [new_snapshot_id]).df()
     old = (

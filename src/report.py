@@ -178,15 +178,9 @@ TREND_AVERAGE_WINDOW = 5
 # event, structural/DSD changes are lowest priority (parser risk, not
 # necessarily new data).
 #
-# Split in two, not one combined CLASS_ORDER, because these go to two
-# different audiences now: OBS_CLASS_ORDER is what generate_change_report()
-# renders into CHANGE_REPORT.md/the PR -- demographic data changes, the
-# thing this project actually publishes and the only thing worth a human's
-# review. TECHNICAL_CLASS_ORDER (catalogue-level: a dataflow appearing,
-# disappearing, or its DSD version bumping) never goes into a PR at all --
-# see technical_log.py, which renders these same classes into a private,
-# directly-committed log instead. CLASS_HEADINGS stays one shared dict
-# since both renderers use the same per-class heading text.
+# Split by audience: OBS_CLASS_ORDER is demographic data, rendered into
+# CHANGE_REPORT.md/the PR. TECHNICAL_CLASS_ORDER (catalogue-level) never
+# goes into a PR -- see technical_log.py. CLASS_HEADINGS is shared by both.
 OBS_CLASS_ORDER = ["NEW_PERIOD", "REVISED", "WITHDRAWN", "NEW_SERIES"]
 TECHNICAL_CLASS_ORDER = ["NEW_DATAFLOW", "DATAFLOW_WITHDRAWN", "STRUCTURAL"]
 CLASS_HEADINGS = {
@@ -449,12 +443,9 @@ def generate_change_report(
     an empty report anywhere.
 
     Catalogue-level changes (NEW_DATAFLOW/DATAFLOW_WITHDRAWN/STRUCTURAL)
-    never come through here -- they're not a demographic figure changing,
-    just TUIK's own service catalogue changing shape, so they don't belong
-    in the one document a human actually reviews before merging. See
-    technical_log.py, which renders those same three classes (reusing
-    _inventory_block() below) into a private, directly-committed log
-    instead.
+    never come through here -- see technical_log.py, which renders those
+    into a private, directly-committed log instead (reuses
+    _inventory_block() below).
 
     `include_sanity`: CHANGE_REPORT.md (the PR document actually reviewed
     before merging) keeps the [ok]/[warn] sanity-check lines by default --

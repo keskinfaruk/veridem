@@ -13,17 +13,13 @@ The daily run -- the one script the GitHub Actions cron workflow calls:
        every one of those forever would turn "immutable snapshot history"
        into mostly noise. Exiting silently on no change means no action at
        all, not a silent commit of a redundant file.
-    4. Whatever *did* change gets kept. A demographic data change (an
-       indicator's actual value) gets written into a change report and
-       signalled to the workflow (`has_changes` in $GITHUB_OUTPUT) so it
-       knows whether to open a PR -- that's the only kind of change this
-       project publishes anywhere. A catalogue-level change (a dataflow
-       appearing/disappearing, a DSD version bump -- TUIK's own service
-       changing shape, not a demographic figure) never goes through the PR
-       or any public channel at all; it's appended to a private log
+    4. Whatever *did* change gets kept. A demographic data change gets
+       written into a change report and signalled to the workflow
+       (`has_changes`) so it knows whether to open a PR. A catalogue-level
+       change (TUIK's own service changing shape, not a demographic figure)
+       never goes through the PR -- it's appended to a private log
        (technical_log.py) that daily.yml commits straight to main
-       (`has_technical_changes` in $GITHUB_OUTPUT), for the project owner's
-       own reference, not for publication.
+       (`has_technical_changes`).
 
 Failure handling: every fetch step is isolated so one source's outage
 never blocks detecting real changes in another source. But the run still
@@ -103,18 +99,13 @@ def _find_snapshot_file(base_dir: Path, snapshot_id: str, dataflow_id: str | Non
 
 
 def _withdrawn_tuik_dataflow_ids(con) -> set[str]:
-    """TUIK dataflow_ids that have observations on record but aren't in the
-    latest catalogue inventory snapshot -- i.e. TUIK withdrew them (see
-    dataflow_inventory.py's DATAFLOW_WITHDRAWN). Once true, it's permanent:
-    these never get fetched again (fetch_tuik_indicators.py skips a 404
-    rather than crash), so their one remaining historical snapshot would
-    otherwise have no "old" snapshot to compare against forever, and
-    diff_observations() would re-classify it as a brand-new NEW_SERIES
-    every single day (old_id stays None every run) -- spurious, since
-    nothing is actually new. Confirmed for real 2026-08-11:
-    DF_EVLENME_ORT_ILK_YAS did exactly this the day after its withdrawal.
-    Only meaningful for source == 'tuik' -- Eurostat/tuik_press dataflows
-    aren't tracked by this inventory at all.
+    """TUIK dataflow_ids with observations on record but absent from the
+    latest catalogue inventory -- i.e. TUIK withdrew them. Without this
+    exclusion, diff_observations() would re-classify the one remaining
+    historical snapshot as a brand-new NEW_SERIES every single run (old_id
+    stays None forever), since these dataflows never get fetched again.
+    Only meaningful for source == 'tuik' -- other sources aren't tracked by
+    this inventory. See ROADMAP_LOG.md for how this was found.
     """
     _, latest_inv_id = latest_two_inventory_snapshots(con)
     if latest_inv_id is None:
@@ -230,10 +221,8 @@ def main() -> int:
     if not has_changes:
         print("\nNo changes detected. Exiting quietly.")
 
-    # Catalogue-level changes (NEW_DATAFLOW/DATAFLOW_WITHDRAWN/STRUCTURAL):
-    # never a demographic figure, so never CHANGE_REPORT.md/the PR and never
-    # posted anywhere -- just a private log, committed straight to main by
-    # daily.yml (see technical_log.py's module docstring for why no PR).
+    # Catalogue-level changes never go through CHANGE_REPORT.md/the PR --
+    # see technical_log.py.
     print("\n=== Technical changes log (catalogue-level, private) ===")
     has_technical_changes = False
     if inv_changes.empty:

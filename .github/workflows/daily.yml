@@ -6,12 +6,9 @@ name: Daily data refresh
 # substantively changed (see daily_run.py's module docstring). No change ->
 # the job just ends quietly, nothing to review.
 #
-# A catalogue-level change (TUIK's own service adding/removing a dataflow or
-# bumping a DSD version -- not a demographic figure) never opens a PR at
-# all: it's appended to data/technical_changes_log.md and committed straight
-# to main (see "Commit technical changes log" below and technical_log.py) --
-# private bookkeeping for the project owner, not something to review or
-# publish.
+# A catalogue-level change (TUIK's own catalogue changing shape, not a
+# demographic figure) never opens a PR -- see "Commit technical changes
+# log" below and technical_log.py.
 #
 # TUIK-press fetching needs no new secret -- the press API takes no auth,
 # just an X-Requested-With header (see tuik_press_client.py) -- but does
@@ -27,13 +24,10 @@ name: Daily data refresh
 #     Bluesky step fails with a clear "credentials not configured" error,
 #     which is why the run exits non-zero (not silently) until they're added
 #   - Settings -> Actions -> General -> Workflow permissions ->
-#     "Read and write permissions" (needed for this workflow to push a
-#     branch and open a PR with the default GITHUB_TOKEN) AND, a separate
-#     checkbox below it, "Allow GitHub Actions to create and approve pull
-#     requests" -- without this second one, "Open or update PR" fails with
-#     "GitHub Actions is not permitted to create or approve pull requests"
-#     even though pushing the branch itself succeeds (hit for real
-#     2026-08-11, fixed via the Actions API rather than by hand)
+#     "Read and write permissions" AND, a separate checkbox below it,
+#     "Allow GitHub Actions to create and approve pull requests" -- both
+#     needed for "Open or update PR" to succeed with the default
+#     GITHUB_TOKEN
 #   - WEBPAGE_PAT repository secret: a fine-grained GitHub PAT with
 #     contents:write on the target site repo only, used to sync
 #     changes.xml + veridem/index.html there directly (no PR)
@@ -121,14 +115,9 @@ jobs:
           add-paths: |
             data/raw/**
 
-      # Catalogue-level changes (see daily_run.py's module docstring) --
-      # direct commit to main, no PR, same reasoning as the baseline-queue
-      # commit below: bookkeeping/reference material for the project owner,
-      # nothing here needs a human's review-before-merge the way an actual
-      # data change does. Includes the TUIK dataflow inventory snapshot
-      # itself (data/inventory/**), not just the log, so tomorrow's run
-      # diffs against today's real catalogue state instead of re-detecting
-      # the same catalogue change again.
+      # Catalogue-level changes -- direct commit to main, no PR, same
+      # pattern as the baseline-queue commit below. Includes the inventory
+      # snapshot itself so tomorrow's run diffs against today's state.
       - name: Commit technical changes log
         if: steps.run.outputs.has_technical_changes == 'true'
         run: |
