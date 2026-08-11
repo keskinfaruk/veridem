@@ -25,7 +25,7 @@ brand-new "dataflow" every single year and lose all revision history.
 press_id is only ever used to *locate* the current table via
 discover_press_ids(); what gets persisted is keyed by the stable slug.
 
-Three tables covered so far:
+Four tables covered so far:
 
     - Basic fertility indicators (Birth Statistics theme): mostly refreshes
       TFR/CBR (already SDMX-sourced) to a newer year, but adds two
@@ -44,6 +44,12 @@ Three tables covered so far:
       only (total people who moved between provinces, and what share of
       the population that is), meaningful at the national level without
       that prerequisite. Provincial migration is future work.
+    - Population, annual growth rate (The Results of Address Based
+      Population Registration System theme): national total population and
+      growth rate, full 2007-2025 history in one fetch. Deliberately NOT
+      the province/age-group/sex breakdown table (also available in this
+      release's statisticalTables) -- that's a bigger indicator on its own
+      (population pyramids, age-dependency data), future work.
 """
 
 import re
@@ -58,11 +64,12 @@ REF_AREA = "TR"
 FREQ = "A"
 CATEGORY = "Population and Demography"
 
-# '2022(r)' -> ('2022', 'r'); '2009.0' (plain float, no footnote on that
-# column) -> ('2009', None). The parenthesized marker's meaning is
-# table-specific (see each parse_* function's own docstring) -- carried
-# through into obs_flag verbatim, not interpreted here.
-_YEAR_RE = re.compile(r"^(\d{4})(?:\.0+)?(?:\((\w+)\))?$")
+# '2022(r)' -> ('2022', 'r'); '2008 (3)' (space before the footnote, seen
+# in the population table) -> ('2008', '3'); '2009.0' (plain float, no
+# footnote on that column) -> ('2009', None). The parenthesized marker's
+# meaning is table-specific (see each parse_* function's own docstring) --
+# carried through into obs_flag verbatim, not interpreted here.
+_YEAR_RE = re.compile(r"^(\d{4})(?:\.0+)?\s*(?:\((\w+)\))?$")
 
 
 def _clean_year(raw) -> tuple[str | None, str | None]:
@@ -246,7 +253,42 @@ def parse_internal_migration_table(df: pd.DataFrame) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Driver -- shared by all three tables above.
+# Population, annual growth rate -- long format like fertility: one row per
+# year, fixed columns, full 2007-2025 history in one fetch (unlike the
+# province-level tables in this same release, which only carry the current
+# and prior year). TOTAL_POPULATION is a new code, not Eurostat's POP_JAN1
+# -- different reference date (Dec 31, ABPRS) and methodology, kept
+# distinct rather than implied equivalent. POP_GROWTH_RATE reuses the
+# Eurostat indicator's name since it's the same concept, kept separate via
+# source= like every other indicator both sources cover.
+# ---------------------------------------------------------------------------
+
+POPULATION_TABLE = "Population, Annual Growth Rate of Population, Number of Provinces, Districts, Towns, Villages and  Population Density"
+POPULATION_DATAFLOW_ID = "PRESS_POPULATION_TOTAL"
+POPULATION_COLUMNS = {
+    1: ("TOTAL_POPULATION", "PERSONS"),
+    2: ("POP_GROWTH_RATE", "PER_1000"),
+}
+
+
+def parse_population_table(df: pd.DataFrame) -> list[dict]:
+    rows = []
+    for _, r in df.iterrows():
+        year, flag = _clean_year(r[0])
+        if year is None:
+            continue
+        for col, (indicator, unit) in POPULATION_COLUMNS.items():
+            value = _to_float(r[col])
+            if value is None:
+                continue
+            rows.append(
+                {"indicator": indicator, "sex": "T", "time_period": year, "obs_value": value, "obs_flag": flag, "unit": unit}
+            )
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# Driver -- shared by all four tables above.
 # ---------------------------------------------------------------------------
 
 # (theme title, table title, dataflow_id, parser)
@@ -254,6 +296,7 @@ TARGETS = [
     ("Birth Statistics", FERTILITY_TABLE, FERTILITY_DATAFLOW_ID, parse_fertility_table),
     ("Death and Causes of Death Statistics", MORTALITY_TABLE, MORTALITY_DATAFLOW_ID, parse_mortality_table),
     ("Internal Migration Statistics", MIGRATION_TABLE, MIGRATION_DATAFLOW_ID, parse_internal_migration_table),
+    ("The Results of Address Based Population Registration System", POPULATION_TABLE, POPULATION_DATAFLOW_ID, parse_population_table),
 ]
 
 

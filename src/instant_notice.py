@@ -88,6 +88,7 @@ CURATED_PRESS_INDICATORS = {
     ("INFANT_MORTALITY_RATE", "T"),        # Death and Causes of Death
     ("UNDER5_MORTALITY_RATE", "T"),        # Death and Causes of Death
     ("INTERNAL_MIGRATION_RATE", "T"),      # Internal Migration Statistics release headline
+    ("TOTAL_POPULATION", "T"),             # Address Based Population Registration System release headline
 }
 
 

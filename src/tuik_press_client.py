@@ -140,13 +140,17 @@ def parse_table(xls_bytes: bytes) -> pd.DataFrame:
 def find_table(press_data: dict, title_contains: str) -> dict:
     """First table whose title contains `title_contains` (case-insensitive)
     -- avoids hardcoding index positions, which shift release to release
-    as TÜİK adds/reorders tables."""
+    as TÜİK adds/reorders tables. Searches both `tables` (the small set
+    shown inline on the release page) and `statisticalTables` (the fuller
+    download catalog, e.g. the "Tables and Graphics" section) -- same
+    shape (title/url), just two different lists TÜİK's API returns them in.
+    """
     needle = title_contains.lower()
-    for t in press_data.get("tables", []):
+    candidates = press_data.get("tables", []) + press_data.get("statisticalTables", [])
+    for t in candidates:
         if needle in t["title"].lower():
             return t
-    available = [t["title"] for t in press_data.get("tables", [])]
-    raise KeyError(f"no table containing {title_contains!r} -- available: {available}")
+    raise KeyError(f"no table containing {title_contains!r} -- available: {[t['title'] for t in candidates]}")
 
 
 DEMO_CATEGORY = "Population and Demography"

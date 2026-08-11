@@ -84,6 +84,7 @@ INDICATOR_LABELS = {
     "POST_NEONATAL_MORTALITY_RATE": "Post-Neonatal Mortality Rate",
     "INTERNAL_MIGRATION_VOLUME": "Internal Migration Volume",
     "INTERNAL_MIGRATION_RATE": "Internal Migration Rate",
+    "TOTAL_POPULATION": "Total Population",
 }
 
 REF_AREA_LABELS = {"TR": "Türkiye"}
@@ -131,6 +132,7 @@ INDICATOR_DECIMALS = {
     "POST_NEONATAL_MORTALITY_RATE": 1,
     "INTERNAL_MIGRATION_VOLUME": 0,
     "INTERNAL_MIGRATION_RATE": 1,
+    "TOTAL_POPULATION": 0,
 }
 
 

@@ -52,6 +52,7 @@ PLAUSIBLE_RANGES = {
     "UNDER5_DEATHS": (0, 50_000),  # persons
     "INTERNAL_MIGRATION_VOLUME": (0, 20_000_000),  # persons
     "INTERNAL_MIGRATION_RATE": (0.0, 20.0),  # percent of population
+    "TOTAL_POPULATION": (50_000_000, 150_000_000),  # persons -- wide, just catches unit slips
 }
 
 # Indicators where any year-on-year move bigger than this absolute amount is
