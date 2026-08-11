@@ -278,7 +278,7 @@ for _ind in (
     _DOMAIN[_ind] = "Mortality"
 for _ind in ("INTERNAL_MIGRATION_VOLUME", "INTERNAL_MIGRATION_RATE"):
     _DOMAIN[_ind] = "Migration"
-for _ind in ("NATURAL_GROWTH_RATE", "POP_GROWTH_RATE", "POP_JAN1"):
+for _ind in ("NATURAL_GROWTH_RATE", "POP_GROWTH_RATE", "POP_JAN1", "TOTAL_POPULATION"):
     _DOMAIN[_ind] = "Population"
 DOMAIN_ORDER = ("Fertility", "Mortality", "Migration", "Population")
 

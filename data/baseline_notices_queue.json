@@ -225,6 +225,21 @@
     "bluesky_uri": null
   },
   {
+    "title": "Current on record -- Population Growth Rate (Türkiye, TurkStat press release) 2025: 5.0, up from 3.4 in 2024 (+45.4%)",
+    "bluesky_text": "Current on record -- Population Growth Rate (Türkiye, TurkStat press release) 2025: 5.0, up from 3.4 in 2024 (+45.4%). Up vs previous period.",
+    "feed_content": "Current on record: Population Growth Rate, Türkiye, TurkStat press release, 2025\n\n  Population       Total\n  Value            5.0 (2025)\n  Previous         3.4 (2024)\n  Change           +1.6 (+45.4%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Up vs previous period\n    5-yr average   5.8\n\n  Recent series\n    2021  12.7\n    2022   7.1\n    2023   1.1\n    2024   3.4\n    2025   5.0   <- current",
+    "indicator": "POP_GROWTH_RATE",
+    "ref_area": "TR",
+    "sex": "T",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260811T224006Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
     "title": "Current on record -- Mean Age at First Birth (Türkiye, TurkStat press release) 2025: 27.5, up from 27.3 in 2024 (+0.7%)",
     "bluesky_text": "Current on record -- Mean Age at First Birth (Türkiye, TurkStat press release) 2025: 27.5, up from 27.3 in 2024 (+0.7%). Up -- 11th consecutive annual increase. Highest value in the series (since 2014).",
     "feed_content": "Current on record: Mean Age at First Birth, Türkiye, TurkStat press release, 2025\n\n  Population       Total\n  Value            27.5 (2025)\n  Previous         27.3 (2024)\n  Change           +0.2 (+0.7%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Up -- 11th consecutive annual increase\n    Record         Highest value in the series (since 2014)\n    5-yr average   27.1\n\n  Recent series\n    2021  26.7\n    2022  26.8\n    2023  27.0\n    2024  27.3\n    2025  27.5   <- current",
@@ -265,6 +280,21 @@
     "time_period": "2025",
     "change_class": "BASELINE",
     "snapshot_id": "tuik_press_20260810T012407Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
+    "title": "Current on record -- Total Population (Türkiye, TurkStat press release) 2025: 86,092,168, up from 85,664,944 in 2024 (+0.5%)",
+    "bluesky_text": "Current on record -- Total Population (Türkiye, TurkStat press release) 2025: 86,092,168, up from 85,664,944 in 2024 (+0.5%). Up -- 18th consecutive annual increase. Highest value in the series (since 2007).",
+    "feed_content": "Current on record: Total Population, Türkiye, TurkStat press release, 2025\n\n  Population       Total\n  Value            86,092,168 (2025)\n  Previous         85,664,944 (2024)\n  Change           +427,224 (+0.5%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Up -- 18th consecutive annual increase\n    Record         Highest value in the series (since 2007)\n    5-yr average   85,417,863\n\n  Recent series\n    2021  84,680,273\n    2022  85,279,553\n    2023  85,372,377\n    2024  85,664,944\n    2025  86,092,168   <- current",
+    "indicator": "TOTAL_POPULATION",
+    "ref_area": "TR",
+    "sex": "T",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260811T224006Z",
     "posted": false,
     "posted_at": null,
     "bluesky_uri": null
