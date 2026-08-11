@@ -22,6 +22,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
+import requests
 
 from series_key import build_series_key, get_dimension_order
 from snapshot import dumps_other_dims, write_snapshot
@@ -108,7 +109,18 @@ def main() -> int:
     for _, row in imap.iterrows():
         label = f"{row['indicator']} ({row['dataflow_id']}, indicator={row['source_indicator_code']})"
         print(f"Fetching {label}...")
-        df = fetch_indicator(row, token)
+        try:
+            df = fetch_indicator(row, token)
+        except requests.exceptions.HTTPError as e:
+            if e.response is not None and e.response.status_code == 404:
+                # The dataflow itself is gone from TUIK's catalogue, not a
+                # transient error -- dataflow_inventory.py's daily diff
+                # already catches and reports this as DATAFLOW_WITHDRAWN
+                # (see report.py). Skip this row rather than take the whole
+                # fetch down; nothing to retry here.
+                print(f"  WARNING: {row['dataflow_id']} returned 404 -- dataflow no longer exists, skipping")
+                continue
+            raise
         if df.empty:
             print("  WARNING: no observations returned -- skipping snapshot")
             continue
