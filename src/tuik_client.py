@@ -57,7 +57,8 @@ def get_access_token(api_key: str | None = None) -> str:
             "(CI: set it as a repository secret)"
         )
 
-    resp = requests.post(
+    resp = _with_retries(
+        requests.post,
         TOKEN_URL,
         headers={"Content-Type": "application/x-www-form-urlencoded"},
         data={

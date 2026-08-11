@@ -41,12 +41,32 @@ figures can predate the SDMX service's own administrative revisions.
 """
 
 import io
+import time
 from urllib.parse import urljoin
 
 import pandas as pd
 import requests
 
 BASE_URL = "https://veriportali.tuik.gov.tr"
+
+# Same rationale as tuik_client.py's _with_retries: veriportali.tuik.gov.tr
+# throws transient read timeouts under load even when otherwise healthy.
+# Retry those -- and only those, never an HTTP error status -- with a short
+# backoff before giving up.
+MAX_RETRIES = 3
+RETRY_BACKOFF_SECONDS = 5
+
+
+def _with_retries(fn, *args, **kwargs):
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            return fn(*args, **kwargs)
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+            if attempt == MAX_RETRIES:
+                raise
+            time.sleep(RETRY_BACKOFF_SECONDS * attempt)
+
+
 # Same path serves two purposes: bare (no ID) lists every theme's current
 # press ID (discover_press_ids()); with an ID appended, one release's full
 # content (fetch_press()).
@@ -78,7 +98,7 @@ def discover_press_ids(category: str | None = None) -> list[dict]:
     used by this module) is the way to walk backward if older releases are
     ever needed -- e.g. to backfill years the current release doesn't cover.
     """
-    resp = requests.get(PRESS_API, headers=HEADERS, timeout=30)
+    resp = _with_retries(requests.get, PRESS_API, headers=HEADERS, timeout=30)
     resp.raise_for_status()
     payload = resp.json()
     if payload.get("isError"):
@@ -92,7 +112,7 @@ def discover_press_ids(category: str | None = None) -> list[dict]:
 def fetch_press(press_id: int) -> dict:
     """One press release's full JSON body -- content, metadata, and the
     `tables` list of downloadable Excel tables."""
-    resp = requests.get(f"{PRESS_API}/{press_id}", headers=HEADERS, timeout=30)
+    resp = _with_retries(requests.get, f"{PRESS_API}/{press_id}", headers=HEADERS, timeout=30)
     resp.raise_for_status()
     payload = resp.json()
     if payload.get("isError"):
@@ -102,7 +122,7 @@ def fetch_press(press_id: int) -> dict:
 
 def download_table(table: dict) -> bytes:
     """Raw .xls bytes for one entry from a press release's `tables` list."""
-    resp = requests.get(urljoin(BASE_URL, table["url"]), headers=HEADERS, timeout=30)
+    resp = _with_retries(requests.get, urljoin(BASE_URL, table["url"]), headers=HEADERS, timeout=30)
     resp.raise_for_status()
     return resp.content
 
