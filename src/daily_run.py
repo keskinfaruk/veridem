@@ -102,6 +102,34 @@ def _find_snapshot_file(base_dir: Path, snapshot_id: str, dataflow_id: str | Non
     return matches[0] if matches else None
 
 
+def _withdrawn_tuik_dataflow_ids(con) -> set[str]:
+    """TUIK dataflow_ids that have observations on record but aren't in the
+    latest catalogue inventory snapshot -- i.e. TUIK withdrew them (see
+    dataflow_inventory.py's DATAFLOW_WITHDRAWN). Once true, it's permanent:
+    these never get fetched again (fetch_tuik_indicators.py skips a 404
+    rather than crash), so their one remaining historical snapshot would
+    otherwise have no "old" snapshot to compare against forever, and
+    diff_observations() would re-classify it as a brand-new NEW_SERIES
+    every single day (old_id stays None every run) -- spurious, since
+    nothing is actually new. Confirmed for real 2026-08-11:
+    DF_EVLENME_ORT_ILK_YAS did exactly this the day after its withdrawal.
+    Only meaningful for source == 'tuik' -- Eurostat/tuik_press dataflows
+    aren't tracked by this inventory at all.
+    """
+    _, latest_inv_id = latest_two_inventory_snapshots(con)
+    if latest_inv_id is None:
+        return set()
+    current = set(
+        con.execute(
+            "SELECT DISTINCT dataflow_id FROM dataflow_inventory WHERE snapshot_id = ?", [latest_inv_id]
+        ).df()["dataflow_id"]
+    )
+    ever_fetched = set(
+        con.execute("SELECT DISTINCT dataflow_id FROM observations WHERE source = 'tuik'").df()["dataflow_id"]
+    )
+    return ever_fetched - current
+
+
 def _prune_unchanged_and_collect_changes() -> tuple[pd.DataFrame, pd.DataFrame]:
     """Diff every dataflow's fresh snapshot against its previous one.
     Delete the fresh file where nothing changed; keep it (and record the
@@ -109,9 +137,12 @@ def _prune_unchanged_and_collect_changes() -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     con = connect()
     obs_changes = []
+    withdrawn_tuik_ids = _withdrawn_tuik_dataflow_ids(con)
 
     dataflows = con.execute("SELECT DISTINCT source, dataflow_id FROM observations").df()
     for _, row in dataflows.iterrows():
+        if row["source"] == "tuik" and row["dataflow_id"] in withdrawn_tuik_ids:
+            continue
         old_id, new_id = latest_two_snapshots(con, row["source"], row["dataflow_id"])
         # old_id may be None (first-ever fetch for this dataflow) -- that's
         # not "nothing to compare", diff_observations treats it correctly as
