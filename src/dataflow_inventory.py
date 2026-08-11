@@ -2,14 +2,19 @@
 TUIK dataflow catalogue: snapshot + diff.
 
 Fetches TUIK's full dataflow list (dataflow/TR/all) the same immutable-
-snapshot way as observations, and diffs two snapshots to catch two
+snapshot way as observations, and diffs two snapshots to catch three
 catalogue-level "technical change" classes, distinct from a substantive
 data change:
 
-    NEW_DATAFLOW - an entirely new dataset appeared
-    STRUCTURAL   - an existing dataflow's DSD version changed (parser risk,
-                   not necessarily new data -- SDMX versions track
-                   structure, not content)
+    NEW_DATAFLOW       - an entirely new dataset appeared
+    DATAFLOW_WITHDRAWN - a dataflow present in the old catalogue is gone
+                          from the new one -- the dataset itself, not one
+                          value in it (that's observation-level WITHDRAWN
+                          in diff.py; a different thing at a different
+                          layer)
+    STRUCTURAL         - an existing dataflow's DSD version changed (parser
+                          risk, not necessarily new data -- SDMX versions
+                          track structure, not content)
 
 This describes the catalogue itself, not any indicator's values, so it gets
 its own snapshot directory (data/inventory/tuik/, deliberately outside
@@ -86,9 +91,11 @@ def latest_two_inventory_snapshots(con) -> tuple[str | None, str | None]:
 def diff_inventory(con, old_snapshot_id: str | None, new_snapshot_id: str) -> pd.DataFrame:
     """Classify catalogue-level changes between two inventory snapshots.
 
-    No "dataflow removed" class is defined -- a dataflow_id present in
-    `old` but missing from `new` is left unclassified here rather than
-    invented.
+    A dataflow_id present in `old` but missing from `new` is DATAFLOW_WITHDRAWN
+    -- TÜİK does occasionally pull a whole dataflow, not just individual
+    values within one (confirmed 2026-08-11: DF_EVLENME_ORT_ILK_YAS and its
+    13 sibling marriage-statistics dataflows all vanished from the live
+    catalogue between two inventory snapshots taken two days apart).
     """
     new = con.execute("SELECT * FROM dataflow_inventory WHERE snapshot_id = ?", [new_snapshot_id]).df()
     old = (
@@ -97,7 +104,7 @@ def diff_inventory(con, old_snapshot_id: str | None, new_snapshot_id: str) -> pd
         else new.iloc[0:0]
     )
 
-    merged = old[["dataflow_id", "version"]].merge(
+    merged = old[["dataflow_id", "version", "name"]].merge(
         new[["dataflow_id", "version", "name"]],
         on="dataflow_id",
         how="outer",
@@ -109,13 +116,13 @@ def diff_inventory(con, old_snapshot_id: str | None, new_snapshot_id: str) -> pd
         if row["_merge"] == "right_only":
             return "NEW_DATAFLOW"
         if row["_merge"] == "left_only":
-            return None
+            return "DATAFLOW_WITHDRAWN"
         return "STRUCTURAL" if row["version_old"] != row["version_new"] else None
 
     merged["change_class"] = merged.apply(classify, axis=1)
     changed = merged[merged["change_class"].notna()].copy()
     return (
-        changed[["dataflow_id", "version_old", "version_new", "name", "change_class"]]
+        changed[["dataflow_id", "version_old", "version_new", "name_old", "name_new", "change_class"]]
         .sort_values("dataflow_id")
         .reset_index(drop=True)
     )

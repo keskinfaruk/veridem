@@ -177,13 +177,17 @@ TREND_AVERAGE_WINDOW = 5
 # Report priority order, most newsworthy first: a fresh period is the main
 # event, structural/DSD changes are lowest priority (parser risk, not
 # necessarily new data).
-CLASS_ORDER = ["NEW_PERIOD", "REVISED", "WITHDRAWN", "NEW_SERIES", "NEW_DATAFLOW", "STRUCTURAL"]
+CLASS_ORDER = [
+    "NEW_PERIOD", "REVISED", "WITHDRAWN", "NEW_SERIES",
+    "NEW_DATAFLOW", "DATAFLOW_WITHDRAWN", "STRUCTURAL",
+]
 CLASS_HEADINGS = {
     "NEW_PERIOD": "New periods",
     "REVISED": "Revisions",
     "WITHDRAWN": "Withdrawn values",
     "NEW_SERIES": "New series",
     "NEW_DATAFLOW": "New dataflows",
+    "DATAFLOW_WITHDRAWN": "Withdrawn dataflows",
     "STRUCTURAL": "Structural changes (DSD version bumps)",
 }
 
@@ -408,8 +412,17 @@ def _new_series_block(row: pd.Series, con, include_sanity: bool = True, public: 
 
 def _inventory_block(row: pd.Series) -> str:
     if row["change_class"] == "NEW_DATAFLOW":
-        name = f" -- {row['name']}" if pd.notna(row.get("name")) else ""
+        name = f" -- {row['name_new']}" if pd.notna(row.get("name_new")) else ""
         return f"NEW DATAFLOW: {row['dataflow_id']}{name}"
+    if row["change_class"] == "DATAFLOW_WITHDRAWN":
+        name = f" -- {row['name_old']}" if pd.notna(row.get("name_old")) else ""
+        version = f" (was version {row['version_old']})" if pd.notna(row.get("version_old")) else ""
+        return (
+            f"DATAFLOW WITHDRAWN: {row['dataflow_id']}{name}{version} -- "
+            "no longer in TÜİK's catalogue; any watched indicator on it will "
+            "fail to fetch until removed from data/indicator_map.csv or TÜİK "
+            "republishes it"
+        )
     return (
         f"STRUCTURAL: {row['dataflow_id']} DSD version "
         f"{row['version_old']} -> {row['version_new']} -- verify the parser still matches"
@@ -451,7 +464,7 @@ def generate_change_report(
 
     sections = []
     for change_class in CLASS_ORDER:
-        if change_class in ("NEW_DATAFLOW", "STRUCTURAL"):
+        if change_class in ("NEW_DATAFLOW", "DATAFLOW_WITHDRAWN", "STRUCTURAL"):
             rows = inventory_changes[inventory_changes["change_class"] == change_class] if not inventory_changes.empty else inventory_changes
         else:
             rows = obs_changes[obs_changes["change_class"] == change_class] if not obs_changes.empty else obs_changes
