@@ -82,9 +82,12 @@ NOTICE_CLASSES = {"NEW_PERIOD", "REVISED", "WITHDRAWN"}
 # 'tuik_press' -- everything else from that release stays fully visible in
 # the data bank and CHANGE_REPORT.md, it just doesn't trigger a public post.
 CURATED_PRESS_INDICATORS = {
-    ("TFR", "T"),                       # Birth Statistics release headline
-    ("CDR", "T"),                       # Death and Causes of Death release headline
-    ("INTERNAL_MIGRATION_RATE", "T"),   # Internal Migration Statistics release headline
+    ("TFR", "T"),                          # Birth Statistics release headline
+    ("ADOLESCENT_FERTILITY_RATE", "T"),    # Birth Statistics
+    ("CDR", "T"),                          # Death and Causes of Death release headline
+    ("INFANT_MORTALITY_RATE", "T"),        # Death and Causes of Death
+    ("UNDER5_MORTALITY_RATE", "T"),        # Death and Causes of Death
+    ("INTERNAL_MIGRATION_RATE", "T"),      # Internal Migration Statistics release headline
 }
 
 
