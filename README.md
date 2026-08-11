@@ -29,9 +29,14 @@ changed. *veri* (data) + *demografi*.
   which dataflow, with which code, is data in `data/indicator_map.csv`, not
   hardcoded per script.
 - **Change detection** (`src/diff.py`, `src/dataflow_inventory.py`) —
-  classifies every difference between two snapshots (new period, revision,
-  withdrawal, new series, new dataflow, structural change) by comparing
-  against this project's own history, not anything an API declares.
+  classifies every difference between two snapshots by comparing against
+  this project's own history, not anything an API declares. Two layers:
+  observation-level (new period, revision, withdrawal, new series — a
+  demographic figure changed) and catalogue-level (new dataflow, dataflow
+  withdrawn, structural change — TurkStat's own service changed shape).
+  Only the first layer goes through a pull request; the second is logged
+  privately (`src/technical_log.py`, `data/technical_changes_log.md`) as
+  research material, never published.
 - **Sanity checks** (`src/sanity.py`) — plausible-range and year-on-year
   volatility checks per indicator, the demographic judgement a raw diff
   can't provide on its own.
@@ -45,20 +50,24 @@ changed. *veri* (data) + *demografi*.
   Türkiye figure changes.
 - **Daily automation** (`src/daily_run.py`, `.github/workflows/daily.yml`)
   — a scheduled run that fetches every source, diffs it, and opens a pull
-  request only when something substantive changed. Silent otherwise.
+  request only when a demographic figure changed. Silent otherwise.
 
 ## Data currently in the bank
 
 **TurkStat SDMX — Türkiye, national:**
 - Total fertility rate (TFR), age-specific fertility rate (ASFR)
-- Mean age of mother at childbearing, mean age at first marriage (by sex)
+- Mean age of mother at childbearing
 - Crude birth rate
+- Mean age at first marriage (by sex) — TurkStat withdrew this dataflow
+  from its SDMX service; historical data stays in the bank, no longer updates
 
 **TurkStat press releases — Türkiye, national:**
 - Total live births, adolescent fertility rate, mean age at first birth
 - Crude death rate, total/infant/under-five/neonatal/post-neonatal deaths
   and rates (by sex)
 - Internal migration volume and rate (by sex)
+- Total population, annual population growth rate (Address Based
+  Population Registration System)
 
 **Eurostat — every country/aggregate each dataflow publishes (Europe: ~57–60
 geos, including EU/EFTA/euro-area aggregates):**
@@ -125,6 +134,7 @@ data/
   indicator_map.csv              # source code -> normalized indicator, per dataflow
   raw/{source}/{date}/*.parquet  # immutable snapshots, one file per fetch run
   inventory/tuik/{date}/         # TurkStat dataflow-catalogue snapshots
+  technical_changes_log.md       # private log of catalogue-level changes (never published)
 src/
   tuik_client.py                 # TurkStat SDMX auth + request client, with retry/backoff
   eurostat_client.py             # Eurostat SDMX client
@@ -138,8 +148,9 @@ src/
   fetch_tfr.py                   # minimal single-indicator reference fetch
   dataflow_inventory.py          # TurkStat dataflow-catalogue snapshot + diff
   diff.py                        # observation-level change detection
+  technical_log.py               # catalogue-level change log (private, no PR)
   sanity.py                      # plausible-range / volatility checks
-  report.py                      # change report generator
+  report.py                      # change report generator (demographic changes only)
   instant_notice.py              # condensed fact-only notice text
   baseline_notice.py             # one-time backfill notices for existing data
   feed.py                        # Atom feed of instant notices
@@ -174,7 +185,10 @@ src/
   revised value is detected by comparing against this project's own
   history, never by anything an API declares — SDMX version numbers track
   structure, not content, and don't change when a dataflow simply gains a
-  new year's data.
+  new year's data. A technical change (TurkStat's catalogue gaining or
+  losing a whole dataflow, or a DSD version bump) is a different thing at
+  a different layer — logged privately, never treated as a publishable
+  event on its own.
 
 ## Data sources & attribution
 
