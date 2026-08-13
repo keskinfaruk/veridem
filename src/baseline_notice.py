@@ -214,12 +214,14 @@ def baseline_feed_content(row: pd.Series, history: pd.Series) -> str:
 
 def build_queue(con, base_url: str | None = None, only_latest_year: bool = True) -> list[dict]:
     """One baseline-notice dict per current Turkiye series, in the order
-    they'll be posted. Same dict shape as instant_notice.build_notices()
-    (title/bluesky_text/feed_content/indicator/ref_area/time_period/
-    change_class/snapshot_id) so feed.append_notices() works unmodified --
-    change_class is set to the literal string "BASELINE", never one of
-    diff.py's real classes, so a feed entry ID can never collide with (or
-    be mistaken for) a genuine change's ID.
+    they'll be posted. Compatible with instant_notice.build_notices()'s
+    dict shape (title/bluesky_text/feed_content/indicator/ref_area/
+    time_period/change_class/snapshot_id) so feed.append_notices() works
+    unmodified, plus sex/age/source/posted-state fields this module needs
+    for its own identity tracking (_existing_keys()). change_class is set
+    to the literal string "BASELINE", never one of diff.py's real
+    classes, so a feed entry ID can never collide with (or be mistaken
+    for) a genuine change's ID.
 
     `only_latest_year`: different indicators can be stuck at different
     "current" years depending on each source's own publication lag (e.g.
@@ -251,6 +253,7 @@ def build_queue(con, base_url: str | None = None, only_latest_year: bool = True)
                 "indicator": row["indicator"],
                 "ref_area": row["ref_area"],
                 "sex": row["sex"],
+                "age": row["age"],
                 "source": row["source"],
                 "time_period": row["time_period"],
                 "change_class": "BASELINE",
@@ -315,12 +318,13 @@ def interleave_by_domain(queue: list[dict], order: tuple[str, ...] = DOMAIN_ORDE
 
 
 def _existing_keys(queue: list[dict]) -> set[tuple]:
-    """(source, indicator, sex, ref_area) for every entry already in a
-    queue -- the identity build_queue() dicts actually carry (they don't
-    store dataflow_id/freq/age/other_dims). Sufficient in practice: no
-    current Turkiye series shares (source, indicator, sex, ref_area) with
-    a different age breakdown."""
-    return {(e["source"], e["indicator"], e["sex"], e["ref_area"]) for e in queue}
+    """(source, indicator, sex, age, ref_area) for every entry already in
+    a queue. `.get("age", "_T")` covers entries queued before "age" was
+    added to build_queue()'s dict -- they default to "_T", correct for
+    every one of them except ASFR (queued 2026-08-14, before this fix),
+    whose 7 age-band entries collapse to one legacy key; harmless, since
+    they're already queued once and won't be re-added regardless."""
+    return {(e["source"], e["indicator"], e["sex"], e.get("age", "_T"), e["ref_area"]) for e in queue}
 
 
 def append_new_series(
@@ -343,7 +347,7 @@ def append_new_series(
     """
     candidates = build_queue(con, base_url=base_url, only_latest_year=only_latest_year)
     seen = _existing_keys(existing_queue)
-    return [c for c in candidates if (c["source"], c["indicator"], c["sex"], c["ref_area"]) not in seen]
+    return [c for c in candidates if (c["source"], c["indicator"], c["sex"], c["age"], c["ref_area"]) not in seen]
 
 
 def main() -> int:
