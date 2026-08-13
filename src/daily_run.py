@@ -1,10 +1,11 @@
 """
 The daily run -- the one script the GitHub Actions cron workflow calls:
 
-    1. Fetch every watched TUIK + Eurostat + TUIK-press indicator, and the
-       TUIK dataflow inventory (see fetch_tuik_indicators.py,
-       fetch_eurostat_indicators.py, fetch_tuik_press_indicators.py,
-       dataflow_inventory.py).
+    1. Fetch every watched TUIK + Eurostat + TUIK-press indicator, and both
+       catalogue inventories -- TUIK's SDMX dataflow list and tuik_press's
+       theme list (see fetch_tuik_indicators.py, fetch_eurostat_indicators.py,
+       fetch_tuik_press_indicators.py, dataflow_inventory.py,
+       press_dataflow_inventory.py).
     2. For every dataflow that already had a prior snapshot, diff the fresh
        one against it.
     3. Discard the fresh snapshot file for any dataflow where nothing
@@ -16,10 +17,10 @@ The daily run -- the one script the GitHub Actions cron workflow calls:
     4. Whatever *did* change gets kept. A demographic data change gets
        written into a change report and signalled to the workflow
        (`has_changes`) so it knows whether to open a PR. A catalogue-level
-       change (TUIK's own service changing shape, not a demographic figure)
-       never goes through the PR -- it's appended to a private log
-       (technical_log.py) that daily.yml commits straight to main
-       (`has_technical_changes`).
+       change (either of TUIK's own services changing shape, not a
+       demographic figure) never goes through the PR -- it's appended to a
+       private log (technical_log.py) that daily.yml commits straight to
+       main (`has_technical_changes`).
 
 Failure handling: every fetch step is isolated so one source's outage
 never blocks detecting real changes in another source. But the run still
@@ -57,12 +58,15 @@ import dataflow_inventory as dataflow_inventory_module
 import fetch_eurostat_indicators
 import fetch_tuik_indicators
 import fetch_tuik_press_indicators
+import press_dataflow_inventory as press_dataflow_inventory_module
 from dataflow_inventory import diff_inventory, latest_two_inventory_snapshots
 from diff import diff_observations, latest_two_snapshots
 from feed import append_notices
 from instant_notice import build_notices
+from press_dataflow_inventory import diff_inventory as diff_press_inventory
+from press_dataflow_inventory import latest_two_inventory_snapshots as latest_two_press_inventory_snapshots
 from report import generate_change_report
-from schema import INVENTORY_DIR, RAW_DIR, connect
+from schema import INVENTORY_DIR, PRESS_INVENTORY_DIR, RAW_DIR, connect
 from technical_log import append_entry as append_technical_log_entry
 
 REPORT_PATH = Path(__file__).resolve().parent.parent / "CHANGE_REPORT.md"
@@ -77,6 +81,7 @@ def _run_fetchers() -> list[str]:
         ("Eurostat indicators", fetch_eurostat_indicators.main),
         ("TUIK press indicators", fetch_tuik_press_indicators.main),
         ("TUIK dataflow inventory", dataflow_inventory_module.main),
+        ("TUIK press theme inventory", press_dataflow_inventory_module.main),
     ]:
         print(f"\n=== {label} ===")
         try:
@@ -89,11 +94,20 @@ def _run_fetchers() -> list[str]:
     return errors
 
 
-def _find_snapshot_file(base_dir: Path, snapshot_id: str, dataflow_id: str | None) -> Path | None:
+def _find_snapshot_file(
+    base_dir: Path, snapshot_id: str, dataflow_id: str | None, inventory_prefix: str = "inventory"
+) -> Path | None:
     """Locate a snapshot's parquet file by the snapshot_id embedded in its
-    filename -- matches the naming snapshot.py / dataflow_inventory.py use.
+    filename -- matches the naming snapshot.py / dataflow_inventory.py /
+    press_dataflow_inventory.py use. `inventory_prefix` distinguishes the
+    two no-dataflow_id catalogues: "inventory" (TUIK SDMX) vs
+    "press_inventory" (tuik_press themes).
     """
-    pattern = f"**/{dataflow_id}__{snapshot_id}.parquet" if dataflow_id else f"**/inventory__{snapshot_id}.parquet"
+    pattern = (
+        f"**/{dataflow_id}__{snapshot_id}.parquet"
+        if dataflow_id
+        else f"**/{inventory_prefix}__{snapshot_id}.parquet"
+    )
     matches = list(base_dir.glob(pattern))
     return matches[0] if matches else None
 
@@ -121,10 +135,11 @@ def _withdrawn_tuik_dataflow_ids(con) -> set[str]:
     return ever_fetched - current
 
 
-def _prune_unchanged_and_collect_changes() -> tuple[pd.DataFrame, pd.DataFrame]:
+def _prune_unchanged_and_collect_changes() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Diff every dataflow's fresh snapshot against its previous one.
     Delete the fresh file where nothing changed; keep it (and record the
-    change) where something did. Returns (observation_changes, inventory_changes).
+    change) where something did. Returns (observation_changes,
+    inventory_changes, press_inventory_changes).
     """
     con = connect()
     obs_changes = []
@@ -156,8 +171,18 @@ def _prune_unchanged_and_collect_changes() -> tuple[pd.DataFrame, pd.DataFrame]:
         if inv_changes.empty and inv_file:
             inv_file.unlink()
 
+    press_inv_old, press_inv_new = latest_two_press_inventory_snapshots(con)
+    press_inv_changes = pd.DataFrame()
+    if press_inv_new is not None:
+        press_inv_changes = diff_press_inventory(con, press_inv_old, press_inv_new)
+        press_inv_file = _find_snapshot_file(
+            PRESS_INVENTORY_DIR, press_inv_new, None, inventory_prefix="press_inventory"
+        )
+        if press_inv_changes.empty and press_inv_file:
+            press_inv_file.unlink()
+
     obs_result = pd.concat(obs_changes, ignore_index=True) if obs_changes else pd.DataFrame()
-    return obs_result, inv_changes
+    return obs_result, inv_changes, press_inv_changes
 
 
 def _publish_instant_notices(obs_changes: pd.DataFrame, con) -> tuple[list[str], bool]:
@@ -203,7 +228,7 @@ def main() -> int:
     errors = _run_fetchers()
 
     print("\n=== Diffing fresh snapshots against prior ones ===")
-    obs_changes, inv_changes = _prune_unchanged_and_collect_changes()
+    obs_changes, inv_changes, press_inv_changes = _prune_unchanged_and_collect_changes()
 
     con = connect()  # fresh connection: some snapshot files were just deleted above
     report_text = generate_change_report(obs_changes, con)
@@ -221,16 +246,17 @@ def main() -> int:
     if not has_changes:
         print("\nNo changes detected. Exiting quietly.")
 
-    # Catalogue-level changes never go through CHANGE_REPORT.md/the PR --
-    # see technical_log.py.
+    # Catalogue-level changes (both TUIK SDMX and tuik_press catalogues)
+    # never go through CHANGE_REPORT.md/the PR -- see technical_log.py.
     print("\n=== Technical changes log (catalogue-level, private) ===")
     has_technical_changes = False
-    if inv_changes.empty:
+    if inv_changes.empty and press_inv_changes.empty:
         print("No catalogue-level changes.")
     else:
         try:
-            has_technical_changes = append_technical_log_entry(inv_changes)
-            print(f"Logged {len(inv_changes)} catalogue change(s) to data/technical_changes_log.md")
+            has_technical_changes = append_technical_log_entry(inv_changes, press_changes=press_inv_changes)
+            total = len(inv_changes) + len(press_inv_changes)
+            print(f"Logged {total} catalogue change(s) to data/technical_changes_log.md")
         except Exception as e:  # noqa: BLE001 -- a log-write failure must not
             # block has_changes/has_tr_notice from being reported correctly.
             print(f"ERROR: technical changes log write failed: {e}", file=sys.stderr)

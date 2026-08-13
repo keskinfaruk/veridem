@@ -181,10 +181,13 @@ TREND_AVERAGE_WINDOW = 5
 # necessarily new data).
 #
 # Split by audience: OBS_CLASS_ORDER is demographic data, rendered into
-# CHANGE_REPORT.md/the PR. TECHNICAL_CLASS_ORDER (catalogue-level) never
-# goes into a PR -- see technical_log.py. CLASS_HEADINGS is shared by both.
+# CHANGE_REPORT.md/the PR. TECHNICAL_CLASS_ORDER (catalogue-level, TUIK's
+# SDMX dataflow catalogue) and PRESS_TECHNICAL_CLASS_ORDER (catalogue-level,
+# tuik_press's theme catalogue -- see press_dataflow_inventory.py) never go
+# into a PR -- see technical_log.py. CLASS_HEADINGS is shared by all three.
 OBS_CLASS_ORDER = ["NEW_PERIOD", "REVISED", "WITHDRAWN", "NEW_SERIES"]
 TECHNICAL_CLASS_ORDER = ["NEW_DATAFLOW", "DATAFLOW_WITHDRAWN", "STRUCTURAL"]
+PRESS_TECHNICAL_CLASS_ORDER = ["PRESS_THEME_NEW", "PRESS_THEME_WITHDRAWN"]
 CLASS_HEADINGS = {
     "NEW_PERIOD": "New periods",
     "REVISED": "Revisions",
@@ -193,6 +196,8 @@ CLASS_HEADINGS = {
     "NEW_DATAFLOW": "New dataflows",
     "DATAFLOW_WITHDRAWN": "Withdrawn dataflows",
     "STRUCTURAL": "Structural changes (DSD version bumps)",
+    "PRESS_THEME_NEW": "New press themes",
+    "PRESS_THEME_WITHDRAWN": "Withdrawn press themes",
 }
 
 
@@ -430,6 +435,19 @@ def _inventory_block(row: pd.Series) -> str:
     return (
         f"STRUCTURAL: {row['dataflow_id']} DSD version "
         f"{row['version_old']} -> {row['version_new']} -- verify the parser still matches"
+    )
+
+
+def _press_inventory_block(row: pd.Series) -> str:
+    if row["change_class"] == "PRESS_THEME_NEW":
+        category = f" -- {row['category_name_new']}" if pd.notna(row.get("category_name_new")) else ""
+        return f"NEW PRESS THEME: {row['title']}{category}"
+    category = f" -- {row['category_name_old']}" if pd.notna(row.get("category_name_old")) else ""
+    return (
+        f"PRESS THEME WITHDRAWN: {row['title']}{category} -- no longer in TÜİK's "
+        "press catalogue; any watched tuik_press indicator sourced from it will "
+        "fail to fetch until removed from fetch_tuik_press_indicators.py or TÜİK "
+        "republishes it"
     )
 
 
