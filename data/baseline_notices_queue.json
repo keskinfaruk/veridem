@@ -40,9 +40,9 @@
     "time_period": "2025",
     "change_class": "BASELINE",
     "snapshot_id": "tuik_press_20260810T012407Z",
-    "posted": false,
-    "posted_at": null,
-    "bluesky_uri": null
+    "posted": true,
+    "posted_at": "2026-08-13T08:52:28.600441+00:00",
+    "bluesky_uri": "at://did:plc:t3funjyprhjd7qqhwifxq4oj/app.bsky.feed.post/3msxbdiapyl2k"
   },
   {
     "title": "Current on record -- Natural Growth Rate (Türkiye, Eurostat) 2025: 4.7, down from 5.2 in 2024 (-9.6%)",
