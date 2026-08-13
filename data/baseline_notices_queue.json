@@ -60,6 +60,21 @@
     "bluesky_uri": null
   },
   {
+    "title": "Current on record -- Crude Divorce Rate (Türkiye, TurkStat press release) 2025: 2.3, up from 2.2 in 2024 (+2.1%)",
+    "bluesky_text": "Current on record -- Crude Divorce Rate (Türkiye, TurkStat press release) 2025: 2.3, up from 2.2 in 2024 (+2.1%). Up vs previous period. Highest value in the series (since 2001).",
+    "feed_content": "Current on record: Crude Divorce Rate, Türkiye, TurkStat press release, 2025\n\n  Population       Total\n  Value            2.3 (2025)\n  Previous         2.2 (2024)\n  Change           +0.0 (+2.1%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Up vs previous period\n    Record         Highest value in the series (since 2001)\n    5-yr average   2.1\n\n  Recent series\n    2021  2.1\n    2022  2.1\n    2023  2.0\n    2024  2.2\n    2025  2.3   <- current",
+    "indicator": "CRUDE_DIVORCE_RATE",
+    "ref_area": "TR",
+    "sex": "T",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T211100Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
     "title": "Current on record -- Crude Birth Rate (CBR) (Türkiye, Eurostat) 2025: 10.4, down from 11.0 in 2024 (-5.5%)",
     "bluesky_text": "Current on record -- Crude Birth Rate (CBR) (Türkiye, Eurostat) 2025: 10.4, down from 11.0 in 2024 (-5.5%). Down -- 11th consecutive annual decline. Lowest value in the series (since 1995).",
     "feed_content": "Current on record: Crude Birth Rate (CBR), Türkiye, Eurostat, 2025\n\n  Population       Total\n  Value            10.4 (2025)\n  Previous         11.0 (2024)\n  Change           -0.6 (-5.5%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down -- 11th consecutive annual decline\n    Record         Lowest value in the series (since 1995)\n    5-yr average   11.5\n\n  Recent series\n    2021  12.8\n    2022  12.2\n    2023  11.2\n    2024  11.0\n    2025  10.4   <- current",
@@ -115,6 +130,21 @@
     "time_period": "2025",
     "change_class": "BASELINE",
     "snapshot_id": "eurostat_20260809T091130Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
+    "title": "Current on record -- Crude Marriage Rate (Türkiye, TurkStat press release) 2025: 6.4, down from 6.7 in 2024 (-3.5%)",
+    "bluesky_text": "Current on record -- Crude Marriage Rate (Türkiye, TurkStat press release) 2025: 6.4, down from 6.7 in 2024 (-3.5%). Down vs previous period.",
+    "feed_content": "Current on record: Crude Marriage Rate, Türkiye, TurkStat press release, 2025\n\n  Population       Total\n  Value            6.4 (2025)\n  Previous         6.7 (2024)\n  Change           -0.2 (-3.5%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down vs previous period\n    5-yr average   6.6\n\n  Recent series\n    2021  6.7\n    2022  6.8\n    2023  6.6\n    2024  6.7\n    2025  6.4   <- current",
+    "indicator": "CRUDE_MARRIAGE_RATE",
+    "ref_area": "TR",
+    "sex": "T",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T211100Z",
     "posted": false,
     "posted_at": null,
     "bluesky_uri": null
@@ -180,6 +210,21 @@
     "bluesky_uri": null
   },
   {
+    "title": "Current on record -- Number of Divorces (Türkiye, TurkStat press release) 2025: 193,793, up from 188,963 in 2024 (+2.6%)",
+    "bluesky_text": "Current on record -- Number of Divorces (Türkiye, TurkStat press release) 2025: 193,793, up from 188,963 in 2024 (+2.6%). Up vs previous period. Highest value in the series (since 2001).",
+    "feed_content": "Current on record: Number of Divorces, Türkiye, TurkStat press release, 2025\n\n  Population       Total\n  Value            193,793 (2025)\n  Previous         188,963 (2024)\n  Change           +4,830 (+2.6%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Up vs previous period\n    Record         Highest value in the series (since 2001)\n    5-yr average   182,863\n\n  Recent series\n    2021  175,779\n    2022  182,437\n    2023  173,342\n    2024  188,963\n    2025  193,793   <- current",
+    "indicator": "NUMBER_OF_DIVORCES",
+    "ref_area": "TR",
+    "sex": "T",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T211100Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
     "title": "Current on record -- Mean Age at Childbearing (Türkiye, TurkStat press release) 2025: 29.4, up from 29.3 in 2024 (+0.4%)",
     "bluesky_text": "Current on record -- Mean Age at Childbearing (Türkiye, TurkStat press release) 2025: 29.4, up from 29.3 in 2024 (+0.4%). Up -- 24th consecutive annual increase. Highest value in the series (since 2001).",
     "feed_content": "Current on record: Mean Age at Childbearing, Türkiye, TurkStat press release, 2025\n\n  Population       Total\n  Value            29.4 (2025)\n  Previous         29.3 (2024)\n  Change           +0.1 (+0.4%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Up -- 24th consecutive annual increase\n    Record         Highest value in the series (since 2001)\n    5-yr average   29.3\n\n  Recent series\n    2021  29.1\n    2022  29.2\n    2023  29.2\n    2024  29.3\n    2025  29.4   <- current",
@@ -235,6 +280,21 @@
     "time_period": "2025",
     "change_class": "BASELINE",
     "snapshot_id": "tuik_press_20260811T224006Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
+    "title": "Current on record -- Number of Marriages (Türkiye, TurkStat press release) 2025: 552,237, down from 569,983 in 2024 (-3.1%)",
+    "bluesky_text": "Current on record -- Number of Marriages (Türkiye, TurkStat press release) 2025: 552,237, down from 569,983 in 2024 (-3.1%). Down vs previous period.",
+    "feed_content": "Current on record: Number of Marriages, Türkiye, TurkStat press release, 2025\n\n  Population       Total\n  Value            552,237 (2025)\n  Previous         569,983 (2024)\n  Change           -17,746 (-3.1%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down vs previous period\n    5-yr average   565,652\n\n  Recent series\n    2021  563,140\n    2022  575,891\n    2023  567,011\n    2024  569,983\n    2025  552,237   <- current",
+    "indicator": "NUMBER_OF_MARRIAGES",
+    "ref_area": "TR",
+    "sex": "T",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T211100Z",
     "posted": false,
     "posted_at": null,
     "bluesky_uri": null
@@ -375,6 +435,21 @@
     "bluesky_uri": null
   },
   {
+    "title": "Current on record -- Emigrants (Türkiye, TurkStat press release, women) 2025: 180,255, down from 187,949 in 2024 (-4.1%)",
+    "bluesky_text": "Current on record -- Emigrants (Türkiye, TurkStat press release, women) 2025: 180,255, down from 187,949 in 2024 (-4.1%). Down vs previous period. Lowest value in the series (since 2024).",
+    "feed_content": "Current on record: Emigrants, Türkiye, TurkStat press release, women, 2025\n\n  Population       Women\n  Value            180,255 (2025)\n  Previous         187,949 (2024)\n  Change           -7,694 (-4.1%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down vs previous period\n    Record         Lowest value in the series (since 2024)\n    2-yr average   184,102\n\n  Recent series\n    2024  187,949\n    2025  180,255   <- current",
+    "indicator": "EMIGRANTS",
+    "ref_area": "TR",
+    "sex": "F",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T211101Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
     "title": "Current on record -- Infant Mortality Rate (Türkiye, TurkStat press release) 2025: 7.8, down from 9.0 in 2024 (-13.5%)",
     "bluesky_text": "Current on record -- Infant Mortality Rate (Türkiye, TurkStat press release) 2025: 7.8, down from 9.0 in 2024 (-13.5%). Down vs previous period. Lowest value in the series (since 2009).",
     "feed_content": "Current on record: Infant Mortality Rate, Türkiye, TurkStat press release, 2025\n\n  Population       Total\n  Value            7.8 (2025)\n  Previous         9.0 (2024)\n  Change           -1.2 (-13.5%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down vs previous period\n    Record         Lowest value in the series (since 2009)\n    5-yr average   9.1\n\n  Recent series\n    2021   9.4\n    2022   9.3\n    2023  10.1\n    2024   9.0\n    2025   7.8   <- current",
@@ -385,6 +460,21 @@
     "time_period": "2025",
     "change_class": "BASELINE",
     "snapshot_id": "tuik_press_20260810T012406Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
+    "title": "Current on record -- Emigrants (Türkiye, TurkStat press release, men) 2025: 222,961, down from 236,396 in 2024 (-5.7%)",
+    "bluesky_text": "Current on record -- Emigrants (Türkiye, TurkStat press release, men) 2025: 222,961, down from 236,396 in 2024 (-5.7%). Down vs previous period. Lowest value in the series (since 2024).",
+    "feed_content": "Current on record: Emigrants, Türkiye, TurkStat press release, men, 2025\n\n  Population       Men\n  Value            222,961 (2025)\n  Previous         236,396 (2024)\n  Change           -13,435 (-5.7%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down vs previous period\n    Record         Lowest value in the series (since 2024)\n    2-yr average   229,678\n\n  Recent series\n    2024  236,396\n    2025  222,961   <- current",
+    "indicator": "EMIGRANTS",
+    "ref_area": "TR",
+    "sex": "M",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T211101Z",
     "posted": false,
     "posted_at": null,
     "bluesky_uri": null
@@ -405,6 +495,21 @@
     "bluesky_uri": null
   },
   {
+    "title": "Current on record -- Emigrants (Türkiye, TurkStat press release) 2025: 403,216, down from 424,345 in 2024 (-5.0%)",
+    "bluesky_text": "Current on record -- Emigrants (Türkiye, TurkStat press release) 2025: 403,216, down from 424,345 in 2024 (-5.0%). Down vs previous period. Lowest value in the series (since 2024).",
+    "feed_content": "Current on record: Emigrants, Türkiye, TurkStat press release, 2025\n\n  Population       Total\n  Value            403,216 (2025)\n  Previous         424,345 (2024)\n  Change           -21,129 (-5.0%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down vs previous period\n    Record         Lowest value in the series (since 2024)\n    2-yr average   413,780\n\n  Recent series\n    2024  424,345\n    2025  403,216   <- current",
+    "indicator": "EMIGRANTS",
+    "ref_area": "TR",
+    "sex": "T",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T211101Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
     "title": "Current on record -- Neonatal Deaths (Türkiye, TurkStat press release, men) 2025: 2,556, down from 3,047 in 2024 (-16.1%)",
     "bluesky_text": "Current on record -- Neonatal Deaths (Türkiye, TurkStat press release, men) 2025: 2,556, down from 3,047 in 2024 (-16.1%). Down -- 4th consecutive annual decline. Lowest value in the series (since 2009).",
     "feed_content": "Current on record: Neonatal Deaths, Türkiye, TurkStat press release, men, 2025\n\n  Population       Men\n  Value            2,556 (2025)\n  Previous         3,047 (2024)\n  Change           -491 (-16.1%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down -- 4th consecutive annual decline\n    Record         Lowest value in the series (since 2009)\n    5-yr average   3,215\n\n  Recent series\n    2021  3,635\n    2022  3,460\n    2023  3,377\n    2024  3,047\n    2025  2,556   <- current",
@@ -415,6 +520,21 @@
     "time_period": "2025",
     "change_class": "BASELINE",
     "snapshot_id": "tuik_press_20260810T012406Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
+    "title": "Current on record -- Immigrants (Türkiye, TurkStat press release, women) 2025: 170,897, up from 143,252 in 2024 (+19.3%)",
+    "bluesky_text": "Current on record -- Immigrants (Türkiye, TurkStat press release, women) 2025: 170,897, up from 143,252 in 2024 (+19.3%). Up vs previous period. Highest value in the series (since 2024).",
+    "feed_content": "Current on record: Immigrants, Türkiye, TurkStat press release, women, 2025\n\n  Population       Women\n  Value            170,897 (2025)\n  Previous         143,252 (2024)\n  Change           +27,645 (+19.3%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Up vs previous period\n    Record         Highest value in the series (since 2024)\n    2-yr average   157,074\n\n  Recent series\n    2024  143,252\n    2025  170,897   <- current",
+    "indicator": "IMMIGRANTS",
+    "ref_area": "TR",
+    "sex": "F",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T211101Z",
     "posted": false,
     "posted_at": null,
     "bluesky_uri": null
@@ -435,6 +555,21 @@
     "bluesky_uri": null
   },
   {
+    "title": "Current on record -- Immigrants (Türkiye, TurkStat press release, men) 2025: 222,932, up from 171,336 in 2024 (+30.1%)",
+    "bluesky_text": "Current on record -- Immigrants (Türkiye, TurkStat press release, men) 2025: 222,932, up from 171,336 in 2024 (+30.1%). Up vs previous period. Highest value in the series (since 2024).",
+    "feed_content": "Current on record: Immigrants, Türkiye, TurkStat press release, men, 2025\n\n  Population       Men\n  Value            222,932 (2025)\n  Previous         171,336 (2024)\n  Change           +51,596 (+30.1%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Up vs previous period\n    Record         Highest value in the series (since 2024)\n    2-yr average   197,134\n\n  Recent series\n    2024  171,336\n    2025  222,932   <- current",
+    "indicator": "IMMIGRANTS",
+    "ref_area": "TR",
+    "sex": "M",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T211101Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
     "title": "Current on record -- Neonatal Mortality Rate (Türkiye, TurkStat press release, women) 2025: 4.5, down from 4.9 in 2024 (-8.5%)",
     "bluesky_text": "Current on record -- Neonatal Mortality Rate (Türkiye, TurkStat press release, women) 2025: 4.5, down from 4.9 in 2024 (-8.5%). Down vs previous period. Lowest value in the series (since 2009).",
     "feed_content": "Current on record: Neonatal Mortality Rate, Türkiye, TurkStat press release, women, 2025\n\n  Population       Women\n  Value            4.5 (2025)\n  Previous         4.9 (2024)\n  Change           -0.4 (-8.5%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down vs previous period\n    Record         Lowest value in the series (since 2009)\n    5-yr average   5.1\n\n  Recent series\n    2021  5.6\n    2022  5.1\n    2023  5.4\n    2024  4.9\n    2025  4.5   <- current",
@@ -445,6 +580,21 @@
     "time_period": "2025",
     "change_class": "BASELINE",
     "snapshot_id": "tuik_press_20260810T012406Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
+    "title": "Current on record -- Immigrants (Türkiye, TurkStat press release) 2025: 393,829, up from 314,588 in 2024 (+25.2%)",
+    "bluesky_text": "Current on record -- Immigrants (Türkiye, TurkStat press release) 2025: 393,829, up from 314,588 in 2024 (+25.2%). Up vs previous period. Highest value in the series (since 2024).",
+    "feed_content": "Current on record: Immigrants, Türkiye, TurkStat press release, 2025\n\n  Population       Total\n  Value            393,829 (2025)\n  Previous         314,588 (2024)\n  Change           +79,241 (+25.2%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Up vs previous period\n    Record         Highest value in the series (since 2024)\n    2-yr average   354,208\n\n  Recent series\n    2024  314,588\n    2025  393,829   <- current",
+    "indicator": "IMMIGRANTS",
+    "ref_area": "TR",
+    "sex": "T",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T211101Z",
     "posted": false,
     "posted_at": null,
     "bluesky_uri": null

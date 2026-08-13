@@ -26,6 +26,10 @@ INVENTORY_DIR = DATA_DIR / "inventory" / "tuik"
 # not TUIK's SDMX dataflow catalogue -- a different service with a different
 # shape, so it gets its own directory and view rather than being unioned in.
 PRESS_INVENTORY_DIR = DATA_DIR / "inventory" / "tuik_press"
+# A third, finer-grained catalogue: table titles inside each tuik_press
+# Population-and-Demography release, one level deeper than the theme list
+# above. Own directory for the same union-by-name reason.
+PRESS_TABLE_INVENTORY_DIR = DATA_DIR / "inventory" / "tuik_press_tables"
 
 # Column order and DuckDB types for the `observations` long table -- the
 # enforced source of truth every connector must write to.
@@ -76,6 +80,18 @@ PRESS_INVENTORY_SCHEMA = {
 }
 
 
+# Column order and DuckDB types for the `press_table_inventory` table.
+# Identity is (theme_title, table_title); `list_type` is descriptive
+# only, not part of the diff key.
+PRESS_TABLE_INVENTORY_SCHEMA = {
+    "theme_title": "VARCHAR",
+    "table_title": "VARCHAR",
+    "list_type": "VARCHAR",
+    "snapshot_id": "VARCHAR",
+    "retrieved_at": "TIMESTAMP",
+}
+
+
 def _typed_select_list(table_schema: dict) -> str:
     """CAST every column explicitly so a view's types never depend on
     whatever dtype a given parquet file happened to infer at write time."""
@@ -107,9 +123,9 @@ def _register_view(con: duckdb.DuckDBPyConnection, view_name: str, dir_path: Pat
 
 
 def connect(raw_dir: Path | None = None, db_path: str | None = None) -> duckdb.DuckDBPyConnection:
-    """Open a DuckDB connection with `observations`, `dataflow_inventory`, and
-    `press_dataflow_inventory` registered as views over every committed raw
-    snapshot parquet file.
+    """Open a DuckDB connection with `observations`, `dataflow_inventory`,
+    `press_dataflow_inventory`, and `press_table_inventory` registered as
+    views over every committed raw snapshot parquet file.
 
     `db_path` defaults to in-memory: there's nothing to persist, since each
     view recomputes from the committed files on every connect. Pass a path
@@ -120,6 +136,7 @@ def connect(raw_dir: Path | None = None, db_path: str | None = None) -> duckdb.D
     _register_view(con, "observations", raw_dir, OBSERVATIONS_SCHEMA)
     _register_view(con, "dataflow_inventory", INVENTORY_DIR, INVENTORY_SCHEMA)
     _register_view(con, "press_dataflow_inventory", PRESS_INVENTORY_DIR, PRESS_INVENTORY_SCHEMA)
+    _register_view(con, "press_table_inventory", PRESS_TABLE_INVENTORY_DIR, PRESS_TABLE_INVENTORY_SCHEMA)
     return con
 
 

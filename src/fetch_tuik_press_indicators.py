@@ -1,55 +1,27 @@
 """
-Real connector for TÜİK's press-release API -- turns tuik_press_client.py's
-raw table downloads into normalized `observations` rows and writes them
-through the same immutable-snapshot path every other source uses.
+Connector for TÜİK's press-release API. Turns tuik_press_client.py's raw
+table downloads into normalized `observations` rows, written through the
+same immutable-snapshot path every other source uses.
 
-`source='tuik_press'` -- never blended with `source='tuik'` (SDMX) even
-for an indicator both cover. A press figure can predate the SDMX service's
-own administrative revisions for the same period; keeping them as separate
-series is a feature (a real, trackable preliminary-vs-final gap), not a
-workaround.
+`source='tuik_press'`, never blended with `source='tuik'` (SDMX): a press
+figure can predate the SDMX service's own administrative revisions for
+the same period, so the two are kept as distinct, comparable series.
 
-Unlike fetch_tuik_indicators.py / fetch_eurostat_indicators.py, this isn't
-indicator_map.csv-driven for the actual parsing -- these are hand-designed
-Excel exports, not a generic SDMX series shape, so each table gets its own
-parser function below (three so far: fertility, mortality, internal
-migration). indicator_map.csv still gets a descriptive row per indicator
-this produces, for discoverability -- it just isn't read back by the code
-here the way the SDMX connectors read it.
+Not indicator_map.csv-driven for parsing (unlike the SDMX connectors) --
+these are hand-designed Excel exports, so each table gets its own parser
+function below. indicator_map.csv still gets a descriptive row per
+indicator produced here, for discoverability.
 
-**Critical: dataflow_id here is a stable slug (e.g.
-PRESS_BASIC_FERTILITY_INDICATORS), never the press_id.** TÜİK issues a new
-press_id every year -- diff.py/daily_run.py key snapshot history by
-(source, dataflow_id), so using press_id directly would silently start a
-brand-new "dataflow" every single year and lose all revision history.
-press_id is only ever used to *locate* the current table via
-discover_press_ids(); what gets persisted is keyed by the stable slug.
+`dataflow_id` is a stable slug (e.g. PRESS_BASIC_FERTILITY_INDICATORS),
+never the press_id: TÜİK issues a new press_id every year, and snapshot
+history is keyed by (source, dataflow_id).
 
-Four tables covered so far:
-
-    - Basic fertility indicators (Birth Statistics theme): mostly refreshes
-      TFR/CBR (already SDMX-sourced) to a newer year, but adds two
-      indicators with no SDMX coverage at all: adolescent fertility rate
-      and mean age at first birth.
-    - Basic mortality indicators (Death and Causes of Death Statistics):
-      TÜİK publishes zero mortality statistics via SDMX -- this table
-      alone provides native (not Eurostat-proxy) crude death rate, total/
-      infant/under-five/neonatal/post-neonatal deaths and rates, by sex.
-    - Size and proportion of population migrated across provinces by sex
-      (Internal Migration Statistics): TÜİK publishes zero migration
-      statistics via SDMX at all. Deliberately NOT the province-level
-      in/out/net-migration table (also available, see
-      tuik_press_client.py's demo) -- that needs proper NUTS-3 `ref_area`
-      codes, which nothing in this repo builds yet; this table is national
-      only (total people who moved between provinces, and what share of
-      the population that is), meaningful at the national level without
-      that prerequisite. Provincial migration is future work.
-    - Population, annual growth rate (The Results of Address Based
-      Population Registration System theme): national total population and
-      growth rate, full 2007-2025 history in one fetch. Deliberately NOT
-      the province/age-group/sex breakdown table (also available in this
-      release's statisticalTables) -- that's a bigger indicator on its own
-      (population pyramids, age-dependency data), future work.
+Seven tables covered, all national-level: basic fertility indicators,
+basic mortality indicators, internal migration volume, total population
+and growth rate (ABPRS), marriage/divorce headline figures, international
+migration totals by sex, and healthy life years by age group and sex
+(the only one with an `age` dimension and a multi-year `time_period`
+range, e.g. "2022-2024").
 """
 
 import re
@@ -86,11 +58,27 @@ def _to_float(val) -> float | None:
         return None
 
 
-# ---------------------------------------------------------------------------
-# Basic fertility indicators -- long format, one row per year, fixed columns.
-# '(r)' marks a year revised via updated administrative records (the
-# table's own footnote) -- same meaning as the mortality table's '(r)' below.
-# ---------------------------------------------------------------------------
+# SDMX-style age-band codes (Y_LT1/Y15T19 convention). Returns None for a
+# non-age label so callers can use that to skip footer/title rows.
+_AGE_RANGE_RE = re.compile(r"^(\d+)-(\d+)$")
+_AGE_PLUS_RE = re.compile(r"^(\d+)\+$")
+
+
+def _age_group_code(label: str) -> str | None:
+    label = label.strip()
+    if label.isdigit():
+        return f"Y{label}"
+    m = _AGE_RANGE_RE.match(label)
+    if m:
+        return f"Y{m.group(1)}T{m.group(2)}"
+    m = _AGE_PLUS_RE.match(label)
+    if m:
+        return f"Y_GE{m.group(1)}"
+    return None
+
+
+# Long format, one row per year, fixed columns. '(r)' marks a year
+# revised via updated administrative records.
 
 FERTILITY_TABLE = "Basic fertility indicators"
 FERTILITY_DATAFLOW_ID = "PRESS_BASIC_FERTILITY_INDICATORS"
@@ -120,34 +108,19 @@ def parse_fertility_table(df: pd.DataFrame) -> list[dict]:
     return rows
 
 
-# ---------------------------------------------------------------------------
-# Basic mortality indicators -- wide format: indicator+sex as rows (label
-# forward-filled across a 1- or 3-row group), years as columns. Two
-# distinct footnote markers on year columns, carried through verbatim
-# rather than merged: '(r)' = death data itself revised via updated
-# administrative records; '(1)' = rate recalculated because the
-# *birth-data* denominator was revised -- genuinely different things, so
-# obs_flag keeps them distinct.
-# ---------------------------------------------------------------------------
+# Wide format: indicator+sex as rows (label forward-filled across a 1- or
+# 3-row group), years as columns. '(r)' = death data revised; '(1)' = rate
+# recalculated because the birth-data denominator was revised -- kept
+# distinct in obs_flag.
 
 MORTALITY_TABLE = "Basic mortality indicators"
 MORTALITY_DATAFLOW_ID = "PRESS_BASIC_MORTALITY_INDICATORS"
 
-# Matched by substring, case-insensitive, against EITHER language, not just
-# English. Unlike the header row (one cell, "Göstergeler\nIndicators"), each
-# *data* row-group's label is split across two physical rows -- Turkish on
-# the "Toplam-Total" row, English on the "Erkek-Male"/"Erkek-Boy" row,
-# nothing on the third ("Kadın-Female"/"Kız-Girl") row. An English-only
-# matcher would silently drop every group's first (Total) row and misfile
-# its values under whichever indicator a prior row had left `current` set to.
-#
-# Order matters for a second reason: real substring collisions, checked
-# both languages -- "Neonatal mortality rate" is a substring of "Post
-# neonatal mortality rate" (and the Turkish equivalents collide the same
-# way; "Ölüm sayısı"/"Ölüm hızı" bare are substrings of nearly every other
-# Turkish label here) -- every post-neonatal and total-death/rate entry is
-# placed as late as it needs to be to never shadow a more specific one
-# still below it.
+# Matched by substring against either language: each data row-group's
+# label splits across two physical rows (Turkish on Total, English on
+# Male, nothing on Female), so an English-only matcher drops every Total
+# row. Order matters: "Neonatal mortality rate" is a substring of "Post
+# neonatal mortality rate", so more specific entries are listed later.
 MORTALITY_INDICATORS = [
     ("Number of Infant deaths", "Bebek ölüm sayısı", "INFANT_DEATHS", "PERSONS"),
     ("Infant mortality rate", "Bebek ölüm hızı", "INFANT_MORTALITY_RATE", "PER_1000"),
@@ -214,15 +187,10 @@ def parse_mortality_table(df: pd.DataFrame) -> list[dict]:
     return rows
 
 
-# ---------------------------------------------------------------------------
-# Size and proportion of population migrated across provinces by sex --
-# long format like fertility, but two 3-column groups (volume, rate) side
-# by side with a blank spacer column between them. Deliberately the
-# national-volume table, not the province-level in/out/net-migration one --
-# see module docstring. '(1)'/'(2)' mark a real methodology break (foreign
-# population excluded/included), not a data revision -- kept in obs_flag
-# verbatim: flag it, don't hide it.
-# ---------------------------------------------------------------------------
+# National-volume table (not the province-level in/out/net-migration
+# one). Two 3-column groups (volume, rate) with a blank spacer column.
+# '(1)'/'(2)' mark a methodology break (foreign population excluded/
+# included), not a revision -- kept in obs_flag as-is.
 
 MIGRATION_TABLE = "Size and proportion of population migrated across provinces by sex"
 MIGRATION_DATAFLOW_ID = "PRESS_INTERNAL_MIGRATION_VOLUME"
@@ -252,16 +220,10 @@ def parse_internal_migration_table(df: pd.DataFrame) -> list[dict]:
     return rows
 
 
-# ---------------------------------------------------------------------------
-# Population, annual growth rate -- long format like fertility: one row per
-# year, fixed columns, full 2007-2025 history in one fetch (unlike the
-# province-level tables in this same release, which only carry the current
-# and prior year). TOTAL_POPULATION is a new code, not Eurostat's POP_JAN1
-# -- different reference date (Dec 31, ABPRS) and methodology, kept
-# distinct rather than implied equivalent. POP_GROWTH_RATE reuses the
-# Eurostat indicator's name since it's the same concept, kept separate via
-# source= like every other indicator both sources cover.
-# ---------------------------------------------------------------------------
+# Long format, one row per year, full 2007-2025 history in one fetch.
+# TOTAL_POPULATION is distinct from Eurostat's POP_JAN1 (different
+# reference date and methodology); POP_GROWTH_RATE shares the Eurostat
+# indicator's name, kept separate via source=.
 
 POPULATION_TABLE = "Population, Annual Growth Rate of Population, Number of Provinces, Districts, Towns, Villages and  Population Density"
 POPULATION_DATAFLOW_ID = "PRESS_POPULATION_TOTAL"
@@ -287,17 +249,130 @@ def parse_population_table(df: pd.DataFrame) -> list[dict]:
     return rows
 
 
-# ---------------------------------------------------------------------------
-# Driver -- shared by all four tables above.
-# ---------------------------------------------------------------------------
+# Long format, one row per year. No sex breakdown in this table.
 
-# (theme title, table title, dataflow_id, parser)
+MARRIAGE_DIVORCE_TABLE = "Number of marriages, crude marriage rate, number of divorces and crude divorce rate"
+MARRIAGE_DIVORCE_DATAFLOW_ID = "PRESS_MARRIAGE_DIVORCE_HEADLINE"
+MARRIAGE_DIVORCE_COLUMNS = {
+    1: ("NUMBER_OF_MARRIAGES", "PERSONS"),
+    2: ("CRUDE_MARRIAGE_RATE", "PER_1000"),
+    3: ("NUMBER_OF_DIVORCES", "PERSONS"),
+    4: ("CRUDE_DIVORCE_RATE", "PER_1000"),
+}
+
+
+def parse_marriage_divorce_table(df: pd.DataFrame) -> list[dict]:
+    rows = []
+    for _, r in df.iterrows():
+        year, flag = _clean_year(r[0])
+        if year is None:
+            continue
+        for col, (indicator, unit) in MARRIAGE_DIVORCE_COLUMNS.items():
+            value = _to_float(r[col])
+            if value is None:
+                continue
+            rows.append(
+                {"indicator": indicator, "sex": "T", "time_period": year, "obs_value": value, "obs_flag": flag, "unit": unit}
+            )
+    return rows
+
+
+# National totals only -- the source table also breaks these down by age
+# group, not parsed here. Keeps each year's "Toplam-Total" row; year is
+# forward-filled since it's only given once per year-block.
+
+MIGRATION_AGE_TABLE = "Immigrants and emigrants by age group and sex"
+MIGRATION_AGE_DATAFLOW_ID = "PRESS_INTERNATIONAL_MIGRATION"
+_MIGRATION_TOTAL_LABELS = {"toplam-total", "total"}
+MIGRATION_AGE_COLUMNS = {
+    3: ("IMMIGRANTS", "T", "PERSONS"),
+    4: ("IMMIGRANTS", "M", "PERSONS"),
+    5: ("IMMIGRANTS", "F", "PERSONS"),
+    7: ("EMIGRANTS", "T", "PERSONS"),
+    8: ("EMIGRANTS", "M", "PERSONS"),
+    9: ("EMIGRANTS", "F", "PERSONS"),
+}
+
+
+def parse_international_migration_table(df: pd.DataFrame) -> list[dict]:
+    rows = []
+    current_year: str | None = None
+    for _, r in df.iterrows():
+        year, flag = _clean_year(r[0])
+        if year is not None:
+            current_year = year
+        if current_year is None:
+            continue  # haven't reached the first real year block yet
+
+        age_label = r[1]
+        if not (isinstance(age_label, str) and age_label.strip().lower() in _MIGRATION_TOTAL_LABELS):
+            continue  # age-breakdown row, or footer -- not this parser's job
+
+        for col, (indicator, sex, unit) in MIGRATION_AGE_COLUMNS.items():
+            value = _to_float(r[col])
+            if value is None:
+                continue
+            rows.append(
+                {"indicator": indicator, "sex": sex, "time_period": current_year, "obs_value": value, "obs_flag": flag, "unit": unit}
+            )
+    return rows
+
+
+# The only table with an age dimension and a multi-year time_period
+# range (e.g. "2022-2024"), read from the title row rather than
+# hardcoded since it advances release to release.
+
+HEALTHY_LIFE_YEARS_TABLE = "Healthy life years"
+HEALTHY_LIFE_YEARS_DATAFLOW_ID = "PRESS_HEALTHY_LIFE_YEARS"
+_PERIOD_RANGE_RE = re.compile(r"(\d{4}-\d{4})")
+HEALTHY_LIFE_YEARS_COLUMNS = {1: "T", 2: "M", 3: "F"}
+
+
+def parse_healthy_life_years_table(df: pd.DataFrame) -> list[dict]:
+    title_row = " ".join(str(v) for v in df.iloc[1].tolist() if pd.notna(v))
+    m = _PERIOD_RANGE_RE.search(title_row)
+    if not m:
+        raise ValueError(f"{HEALTHY_LIFE_YEARS_TABLE}: no YYYY-YYYY period found in the title row -- table shape changed?")
+    period = m.group(1)
+
+    rows = []
+    for _, r in df.iterrows():
+        age_code = _age_group_code(str(r[0])) if pd.notna(r[0]) else None
+        if age_code is None:
+            continue  # title/header/footer row, or an unrecognized label
+        for col, sex in HEALTHY_LIFE_YEARS_COLUMNS.items():
+            value = _to_float(r[col])
+            if value is None:
+                continue
+            rows.append(
+                {
+                    "indicator": "HEALTHY_LIFE_YEARS",
+                    "sex": sex,
+                    "age": age_code,
+                    "time_period": period,
+                    "obs_value": value,
+                    "obs_flag": None,
+                    "unit": "YEARS",
+                }
+            )
+    return rows
+
+
+# Driver, shared by all seven tables above: (theme title, table title,
+# dataflow_id, parser).
 TARGETS = [
     ("Birth Statistics", FERTILITY_TABLE, FERTILITY_DATAFLOW_ID, parse_fertility_table),
     ("Death and Causes of Death Statistics", MORTALITY_TABLE, MORTALITY_DATAFLOW_ID, parse_mortality_table),
     ("Internal Migration Statistics", MIGRATION_TABLE, MIGRATION_DATAFLOW_ID, parse_internal_migration_table),
     ("The Results of Address Based Population Registration System", POPULATION_TABLE, POPULATION_DATAFLOW_ID, parse_population_table),
+    ("Marriage and Divorce Statistics", MARRIAGE_DIVORCE_TABLE, MARRIAGE_DIVORCE_DATAFLOW_ID, parse_marriage_divorce_table),
+    ("International Migration Statistics", MIGRATION_AGE_TABLE, MIGRATION_AGE_DATAFLOW_ID, parse_international_migration_table),
+    ("Life Tables", HEALTHY_LIFE_YEARS_TABLE, HEALTHY_LIFE_YEARS_DATAFLOW_ID, parse_healthy_life_years_table),
 ]
+
+# (theme_title, table_title) pairs already parsed above, read by
+# press_table_inventory.py to exclude them from candidate discovery.
+COVERED_TABLES = {(theme, table) for theme, table, _, _ in TARGETS}
 
 
 def fetch_one(theme_title: str, table_title: str, dataflow_id: str, parser, press_ids: dict[str, int]) -> pd.DataFrame:
@@ -317,7 +392,7 @@ def fetch_one(theme_title: str, table_title: str, dataflow_id: str, parser, pres
             "ref_area": REF_AREA,
             "freq": FREQ,
             "sex": t["sex"],
-            "age": "_T",
+            "age": t.get("age", "_T"),
             "unit": t["unit"],
             "other_dims": dumps_other_dims({}),
             "time_period": t["time_period"],

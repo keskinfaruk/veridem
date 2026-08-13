@@ -1,49 +1,26 @@
 """
-The daily run -- the one script the GitHub Actions cron workflow calls:
+The daily run -- the script the GitHub Actions cron workflow calls:
 
-    1. Fetch every watched TUIK + Eurostat + TUIK-press indicator, and both
-       catalogue inventories -- TUIK's SDMX dataflow list and tuik_press's
-       theme list (see fetch_tuik_indicators.py, fetch_eurostat_indicators.py,
-       fetch_tuik_press_indicators.py, dataflow_inventory.py,
-       press_dataflow_inventory.py).
-    2. For every dataflow that already had a prior snapshot, diff the fresh
-       one against it.
-    3. Discard the fresh snapshot file for any dataflow where nothing
-       changed. A fetch always writes a *new* file (new snapshot_id) even
-       when the underlying data is byte-identical to last time -- keeping
-       every one of those forever would turn "immutable snapshot history"
-       into mostly noise. Exiting silently on no change means no action at
-       all, not a silent commit of a redundant file.
-    4. Whatever *did* change gets kept. A demographic data change gets
-       written into a change report and signalled to the workflow
-       (`has_changes`) so it knows whether to open a PR. A catalogue-level
-       change (either of TUIK's own services changing shape, not a
-       demographic figure) never goes through the PR -- it's appended to a
-       private log (technical_log.py) that daily.yml commits straight to
-       main (`has_technical_changes`).
+    1. Fetch every watched TUIK + Eurostat + tuik_press indicator, plus
+       both catalogue inventories (TUIK's SDMX dataflow list, tuik_press's
+       theme list).
+    2. Diff each dataflow's fresh snapshot against its prior one; discard
+       the fresh file where nothing changed.
+    3. A demographic change opens a PR (`has_changes`). A catalogue-level
+       change goes to a private log instead, never a PR
+       (`has_technical_changes`).
+    4. Separately, scans for indicator candidates not yet wired into this
+       project (candidate_indicators.py), surfaced as a GitHub issue
+       (`has_new_candidates`) -- neither a demographic change nor
+       catalogue bookkeeping.
 
-Failure handling: every fetch step is isolated so one source's outage
-never blocks detecting real changes in another source. But the run still
-exits non-zero if anything failed, so the workflow shows red and GitHub's
-own failed-scheduled-workflow email is the failure notification --
-deliberately not a second, custom-built notification channel.
+Failure handling: every fetch step is isolated, but the run exits
+non-zero if anything failed, so a red workflow run and GitHub's own
+failure email are the notification -- no separate channel.
 
-tuik_press differs from the other two sources in one respect worth
-remembering: it's an undocumented, reverse-engineered API (see
-tuik_press_client.py's module docstring), not a stable published service.
-The mitigation is the same "fail loudly" mechanism as everything else
-here, not a bespoke gate: its parsers already raise ValueError on a
-structural surprise (missing header row, no year columns -- see
-fetch_tuik_press_indicators.py) rather than silently emitting wrong rows,
-which surfaces as a normal fetch error in `errors` below and a red run,
-same as a TUIK/Eurostat outage. A shape change that *doesn't* trip a
-parser error but does produce a wrong number is the residual risk this
-doesn't cover -- guarded only as well as sanity.py's plausible-range/
-volatility checks catch it, same exposure the SDMX sources already have.
-instant_notice.py's filter_curated_press() additionally keeps a single
-press release (up to ~26 series at once) from bursting that many public
-posts in one day -- only each release's headline indicator is
-instant-notice-eligible.
+tuik_press is undocumented and reverse-engineered, unlike the other two
+sources: its parsers raise loudly on a structural surprise rather than
+emit wrong rows, same "fail loudly" mechanism as everything else here.
 """
 
 import os
@@ -54,22 +31,28 @@ from pathlib import Path
 import pandas as pd
 
 import bluesky_client
+import candidate_indicators
 import dataflow_inventory as dataflow_inventory_module
 import fetch_eurostat_indicators
 import fetch_tuik_indicators
 import fetch_tuik_press_indicators
 import press_dataflow_inventory as press_dataflow_inventory_module
+import press_table_inventory as press_table_inventory_module
+import tuik_categories
 from dataflow_inventory import diff_inventory, latest_two_inventory_snapshots
 from diff import diff_observations, latest_two_snapshots
 from feed import append_notices
 from instant_notice import build_notices
 from press_dataflow_inventory import diff_inventory as diff_press_inventory
 from press_dataflow_inventory import latest_two_inventory_snapshots as latest_two_press_inventory_snapshots
+from press_table_inventory import diff_inventory as diff_press_table_inventory
+from press_table_inventory import latest_two_inventory_snapshots as latest_two_press_table_snapshots
 from report import generate_change_report
-from schema import INVENTORY_DIR, PRESS_INVENTORY_DIR, RAW_DIR, connect
+from schema import INVENTORY_DIR, PRESS_INVENTORY_DIR, PRESS_TABLE_INVENTORY_DIR, RAW_DIR, connect
 from technical_log import append_entry as append_technical_log_entry
 
 REPORT_PATH = Path(__file__).resolve().parent.parent / "CHANGE_REPORT.md"
+CANDIDATE_REPORT_PATH = Path(__file__).resolve().parent.parent / candidate_indicators.CANDIDATE_REPORT_PATH_NAME
 
 
 def _run_fetchers() -> list[str]:
@@ -82,6 +65,7 @@ def _run_fetchers() -> list[str]:
         ("TUIK press indicators", fetch_tuik_press_indicators.main),
         ("TUIK dataflow inventory", dataflow_inventory_module.main),
         ("TUIK press theme inventory", press_dataflow_inventory_module.main),
+        ("TUIK press table inventory", press_table_inventory_module.main),
     ]:
         print(f"\n=== {label} ===")
         try:
@@ -114,12 +98,11 @@ def _find_snapshot_file(
 
 def _withdrawn_tuik_dataflow_ids(con) -> set[str]:
     """TUIK dataflow_ids with observations on record but absent from the
-    latest catalogue inventory -- i.e. TUIK withdrew them. Without this
+    latest catalogue inventory, i.e. TUIK withdrew them. Without this
     exclusion, diff_observations() would re-classify the one remaining
-    historical snapshot as a brand-new NEW_SERIES every single run (old_id
-    stays None forever), since these dataflows never get fetched again.
-    Only meaningful for source == 'tuik' -- other sources aren't tracked by
-    this inventory. See ROADMAP_LOG.md for how this was found.
+    historical snapshot as a brand-new NEW_SERIES every run (old_id stays
+    None forever), since these dataflows never get fetched again. Only
+    meaningful for source == 'tuik'.
     """
     _, latest_inv_id = latest_two_inventory_snapshots(con)
     if latest_inv_id is None:
@@ -135,11 +118,11 @@ def _withdrawn_tuik_dataflow_ids(con) -> set[str]:
     return ever_fetched - current
 
 
-def _prune_unchanged_and_collect_changes() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def _prune_unchanged_and_collect_changes() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Diff every dataflow's fresh snapshot against its previous one.
     Delete the fresh file where nothing changed; keep it (and record the
     change) where something did. Returns (observation_changes,
-    inventory_changes, press_inventory_changes).
+    inventory_changes, press_inventory_changes, press_table_changes).
     """
     con = connect()
     obs_changes = []
@@ -181,8 +164,18 @@ def _prune_unchanged_and_collect_changes() -> tuple[pd.DataFrame, pd.DataFrame, 
         if press_inv_changes.empty and press_inv_file:
             press_inv_file.unlink()
 
+    press_table_old, press_table_new = latest_two_press_table_snapshots(con)
+    press_table_changes = pd.DataFrame()
+    if press_table_new is not None:
+        press_table_changes = diff_press_table_inventory(con, press_table_old, press_table_new)
+        press_table_file = _find_snapshot_file(
+            PRESS_TABLE_INVENTORY_DIR, press_table_new, None, inventory_prefix="press_tables"
+        )
+        if press_table_changes.empty and press_table_file:
+            press_table_file.unlink()
+
     obs_result = pd.concat(obs_changes, ignore_index=True) if obs_changes else pd.DataFrame()
-    return obs_result, inv_changes, press_inv_changes
+    return obs_result, inv_changes, press_inv_changes, press_table_changes
 
 
 def _publish_instant_notices(obs_changes: pd.DataFrame, con) -> tuple[list[str], bool]:
@@ -228,7 +221,7 @@ def main() -> int:
     errors = _run_fetchers()
 
     print("\n=== Diffing fresh snapshots against prior ones ===")
-    obs_changes, inv_changes, press_inv_changes = _prune_unchanged_and_collect_changes()
+    obs_changes, inv_changes, press_inv_changes, press_table_changes = _prune_unchanged_and_collect_changes()
 
     con = connect()  # fresh connection: some snapshot files were just deleted above
     report_text = generate_change_report(obs_changes, con)
@@ -263,12 +256,34 @@ def main() -> int:
             traceback.print_exc()
             errors.append(f"technical changes log write failed: {e}")
 
+    print("\n=== Indicator candidates (not yet in the pipeline) ===")
+    has_new_candidates = False
+    if CANDIDATE_REPORT_PATH.exists():
+        CANDIDATE_REPORT_PATH.unlink()
+    try:
+        theme11_ids = tuik_categories.theme11_dataflow_ids()
+        sdmx_cand = candidate_indicators.sdmx_candidates(inv_changes, theme11_ids)
+        has_new_candidates = candidate_indicators.has_candidates(sdmx_cand, press_table_changes)
+        if has_new_candidates:
+            CANDIDATE_REPORT_PATH.write_text(
+                candidate_indicators.render_report(sdmx_cand, press_table_changes), encoding="utf-8"
+            )
+            print(f"Found candidate(s) -- wrote {CANDIDATE_REPORT_PATH}")
+        else:
+            print("No new indicator candidates.")
+    except Exception as e:  # noqa: BLE001 -- a candidate-scan failure must not
+        # block any of the real results above from being reported correctly.
+        print(f"ERROR: indicator-candidate scan failed: {e}", file=sys.stderr)
+        traceback.print_exc()
+        errors.append(f"indicator-candidate scan failed: {e}")
+
     github_output = os.environ.get("GITHUB_OUTPUT")
     if github_output:
         with open(github_output, "a", encoding="utf-8") as f:
             f.write(f"has_changes={'true' if has_changes else 'false'}\n")
             f.write(f"has_tr_notice={'true' if has_tr_notice else 'false'}\n")
             f.write(f"has_technical_changes={'true' if has_technical_changes else 'false'}\n")
+            f.write(f"has_new_candidates={'true' if has_new_candidates else 'false'}\n")
 
     if errors:
         print(f"\n{len(errors)} error(s) during this run:", file=sys.stderr)

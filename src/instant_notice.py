@@ -89,6 +89,14 @@ CURATED_PRESS_INDICATORS = {
     ("UNDER5_MORTALITY_RATE", "T"),        # Death and Causes of Death
     ("INTERNAL_MIGRATION_RATE", "T"),      # Internal Migration Statistics release headline
     ("TOTAL_POPULATION", "T"),             # Address Based Population Registration System release headline
+    ("CRUDE_MARRIAGE_RATE", "T"),          # Marriage and Divorce Statistics release headline
+    ("CRUDE_DIVORCE_RATE", "T"),           # Marriage and Divorce Statistics
+    ("IMMIGRANTS", "T"),                   # International Migration Statistics release headline
+    ("EMIGRANTS", "T"),                    # International Migration Statistics
+    # HEALTHY_LIFE_YEARS deliberately not curated -- broken into 19 age
+    # groups with no single national figure; filter_curated_press() below
+    # only matches on (indicator, sex), so curating it as-is would make
+    # every age group separately eligible instead of one headline value.
 }
 
 
@@ -104,6 +112,22 @@ def filter_curated_press(changes: pd.DataFrame) -> pd.DataFrame:
     is_press = changes["source"] == "tuik_press"
     allowed = changes.apply(lambda r: (r["indicator"], r["sex"]) in CURATED_PRESS_INDICATORS, axis=1)
     return changes[~is_press | allowed]
+
+
+def _dedupe_same_day_sources(changes: pd.DataFrame) -> pd.DataFrame:
+    """Third gate: when tuik_press and another source both have an eligible
+    notice for the same (indicator, ref_area, sex, time_period) this run,
+    keep only the tuik_press one and drop the rest -- press releases are
+    usually earlier/fresher, so a same-day SDMX/Eurostat update reads as
+    confirmation, not a second real event.
+    """
+    if changes.empty:
+        return changes
+    key_cols = ["indicator", "ref_area", "sex", "time_period"]
+    press_keys = changes.loc[changes["source"] == "tuik_press", key_cols].drop_duplicates()
+    merged = changes.merge(press_keys.assign(_has_press=True), on=key_cols, how="left")
+    keep = (merged["source"] == "tuik_press") | merged["_has_press"].isna()
+    return changes[keep.values].reset_index(drop=True)
 
 
 # Some indicators (e.g. mean age at first marriage) carry separate male and
@@ -313,7 +337,7 @@ def build_notices(changes: pd.DataFrame, con, base_url: str | None = None) -> li
     the byte-offset facet math -- optional, unused until a dashboard
     exists to link to.
     """
-    tr_changes = filter_curated_press(filter_turkiye(changes))
+    tr_changes = _dedupe_same_day_sources(filter_curated_press(filter_turkiye(changes)))
     notices = []
     for _, row in tr_changes.iterrows():
         history = pd.Series(dtype=float)

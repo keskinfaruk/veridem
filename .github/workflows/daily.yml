@@ -56,6 +56,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
 
 jobs:
   refresh:
@@ -115,17 +116,33 @@ jobs:
           add-paths: |
             data/raw/**
 
-      # Catalogue-level changes -- direct commit to main, no PR, same
-      # pattern as the baseline-queue commit below. Includes the inventory
-      # snapshot itself so tomorrow's run diffs against today's state.
+      # Catalogue-level changes -- direct commit to main, no PR. Also
+      # gated on has_new_candidates so a candidate snapshot with no other
+      # catalogue change still gets committed.
       - name: Commit technical changes log
-        if: steps.run.outputs.has_technical_changes == 'true'
+        if: steps.run.outputs.has_technical_changes == 'true' || steps.run.outputs.has_new_candidates == 'true'
         run: |
           git config user.name "veridem-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/technical_changes_log.md data/inventory
           git commit -m "Technical changes log: catalogue update"
           git push
+
+      # One persistent GitHub issue, commented on each time new
+      # candidates appear rather than a new issue every run.
+      - name: Open or comment on candidate-indicators issue
+        if: steps.run.outputs.has_new_candidates == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TITLE="Candidate indicators for review"
+          NUMBER=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number,title \
+            --jq ".[] | select(.title == \"$TITLE\") | .number" | head -n1)
+          if [ -n "$NUMBER" ]; then
+            gh issue comment "$NUMBER" --body-file CANDIDATE_INDICATORS.md
+          else
+            gh issue create --title "$TITLE" --body-file CANDIDATE_INDICATORS.md
+          fi
 
       - name: Post next baseline notice (one-time backfill queue)
         id: baseline
@@ -140,11 +157,10 @@ jobs:
         working-directory: src
         run: python sync_webpage.py ../webpage
 
-      # Records which baseline entry was posted so tomorrow's run doesn't
-      # repeat it -- direct commit to main, no PR, same reasoning as the
-      # feed sync above: bookkeeping, not interpretation, nothing to review.
+      # Records which entry was posted and any newly-queued series --
+      # direct commit to main, no PR, bookkeeping only.
       - name: Commit baseline queue progress
-        if: steps.baseline.outputs.posted_baseline == 'true'
+        if: steps.baseline.outputs.queue_updated == 'true'
         run: |
           git config user.name "veridem-bot"
           git config user.email "actions@users.noreply.github.com"

@@ -10,6 +10,11 @@ a no-op on days it's not yet due, and once the queue is drained. Idempotent:
 running it twice in the same window posts nothing the second time, since
 the first run already advanced the queue and updated `posted_at`.
 
+Before checking what's due, also folds in any series newly present in the
+data bank that the queue doesn't have yet
+(baseline_notice.append_new_series()), so a newly-added indicator joins
+the queue automatically.
+
 Requires the already-checked-out `webpage` repo path as its one argument,
 same convention as sync_webpage.py:
     1. To seed this repo's local, never-committed changes.xml from the
@@ -31,8 +36,9 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import bluesky_client
-from baseline_notice import QUEUE_PATH
+from baseline_notice import QUEUE_PATH, append_new_series, interleave_by_domain
 from feed import FEED_PATH, append_notices
+from schema import connect
 
 # One post a day at most, so the queue drains gradually rather than in a burst.
 MIN_GAP = timedelta(days=1)
@@ -65,18 +71,35 @@ def _seed_local_feed(webpage_repo: Path) -> None:
         shutil.copy(src, FEED_PATH)
 
 
-def post_next(webpage_repo: Path, now: datetime | None = None) -> bool:
+def _append_new_candidates(queue: list[dict]) -> tuple[list[dict], int]:
+    """Fold in any series newly present in the bank that isn't in the
+    queue yet. Purely additive; a no-op when nothing's new."""
+    con = connect()
+    new_entries = append_new_series(queue, con)
+    if not new_entries:
+        return queue, 0
+    return interleave_by_domain(queue + new_entries), len(new_entries)
+
+
+def post_next(webpage_repo: Path, now: datetime | None = None) -> tuple[bool, int]:
     """Post the next unposted queue entry if one exists and enough time has
-    passed since the last one. Returns True if something was posted."""
+    passed since the last one. Returns (posted, newly_queued) -- posted is
+    True if something was posted this run; newly_queued is how many
+    not-previously-queued series got folded in (0 most days)."""
     now = now or datetime.now(timezone.utc)
     queue = _load_queue()
+    queue, added = _append_new_candidates(queue)
+    if added:
+        _save_queue(queue)
+        print(f"Queued {added} new baseline notice(s) for series not previously in the queue.")
+
     pending = [e for e in queue if not e["posted"]]
     if not pending:
         print("Baseline notice queue is fully drained -- nothing to post.")
-        return False
+        return False, added
     if not _due(queue, now):
         print(f"Not due yet -- last baseline post was under the {MIN_GAP} gap.")
-        return False
+        return False, added
 
     entry = pending[0]
     print(f"Posting: {entry['title']}")
@@ -93,7 +116,7 @@ def post_next(webpage_repo: Path, now: datetime | None = None) -> bool:
     entry["bluesky_uri"] = result.get("uri")
     _save_queue(queue)
     print(f"Posted. {len(pending) - 1} remaining in the queue.")
-    return True
+    return True, added
 
 
 def main() -> int:
@@ -103,7 +126,7 @@ def main() -> int:
     webpage_repo = Path(sys.argv[1])
 
     try:
-        posted = post_next(webpage_repo)
+        posted, added = post_next(webpage_repo)
     except Exception as e:  # noqa: BLE001 -- must not take daily.yml's other steps down with it
         print(f"ERROR: baseline notice posting failed: {e}", file=sys.stderr)
         return 1
@@ -112,6 +135,7 @@ def main() -> int:
     if github_output:
         with open(github_output, "a", encoding="utf-8") as f:
             f.write(f"posted_baseline={'true' if posted else 'false'}\n")
+            f.write(f"queue_updated={'true' if (posted or added) else 'false'}\n")
     return 0
 
 

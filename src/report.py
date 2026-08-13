@@ -85,6 +85,13 @@ INDICATOR_LABELS = {
     "INTERNAL_MIGRATION_VOLUME": "Internal Migration Volume",
     "INTERNAL_MIGRATION_RATE": "Internal Migration Rate",
     "TOTAL_POPULATION": "Total Population",
+    "NUMBER_OF_MARRIAGES": "Number of Marriages",
+    "CRUDE_MARRIAGE_RATE": "Crude Marriage Rate",
+    "NUMBER_OF_DIVORCES": "Number of Divorces",
+    "CRUDE_DIVORCE_RATE": "Crude Divorce Rate",
+    "IMMIGRANTS": "Immigrants",
+    "EMIGRANTS": "Emigrants",
+    "HEALTHY_LIFE_YEARS": "Healthy Life Years",
 }
 
 REF_AREA_LABELS = {"TR": "Türkiye"}
@@ -133,6 +140,13 @@ INDICATOR_DECIMALS = {
     "INTERNAL_MIGRATION_VOLUME": 0,
     "INTERNAL_MIGRATION_RATE": 1,
     "TOTAL_POPULATION": 0,
+    "NUMBER_OF_MARRIAGES": 0,
+    "CRUDE_MARRIAGE_RATE": 1,
+    "NUMBER_OF_DIVORCES": 0,
+    "CRUDE_DIVORCE_RATE": 1,
+    "IMMIGRANTS": 0,
+    "EMIGRANTS": 0,
+    "HEALTHY_LIFE_YEARS": 1,
 }
 
 

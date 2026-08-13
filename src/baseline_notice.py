@@ -274,13 +274,16 @@ for _ind in ("TFR", "ADOLESCENT_FERTILITY_RATE", "MEAN_AGE_CHILDBEARING", "MEAN_
 for _ind in (
     "CDR", "INFANT_DEATHS", "INFANT_MORTALITY_RATE", "NEONATAL_DEATHS", "NEONATAL_MORTALITY_RATE",
     "POST_NEONATAL_DEATHS", "POST_NEONATAL_MORTALITY_RATE", "TOTAL_DEATHS", "UNDER5_DEATHS", "UNDER5_MORTALITY_RATE",
+    "HEALTHY_LIFE_YEARS",
 ):
     _DOMAIN[_ind] = "Mortality"
-for _ind in ("INTERNAL_MIGRATION_VOLUME", "INTERNAL_MIGRATION_RATE"):
+for _ind in ("INTERNAL_MIGRATION_VOLUME", "INTERNAL_MIGRATION_RATE", "IMMIGRANTS", "EMIGRANTS"):
     _DOMAIN[_ind] = "Migration"
 for _ind in ("NATURAL_GROWTH_RATE", "POP_GROWTH_RATE", "POP_JAN1", "TOTAL_POPULATION"):
     _DOMAIN[_ind] = "Population"
-DOMAIN_ORDER = ("Fertility", "Mortality", "Migration", "Population")
+for _ind in ("MEAN_AGE_FIRST_MARRIAGE", "NUMBER_OF_MARRIAGES", "CRUDE_MARRIAGE_RATE", "NUMBER_OF_DIVORCES", "CRUDE_DIVORCE_RATE"):
+    _DOMAIN[_ind] = "Nuptiality"
+DOMAIN_ORDER = ("Fertility", "Mortality", "Migration", "Population", "Nuptiality")
 
 
 def interleave_by_domain(queue: list[dict], order: tuple[str, ...] = DOMAIN_ORDER) -> list[dict]:

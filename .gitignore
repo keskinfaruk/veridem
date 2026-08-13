@@ -16,12 +16,20 @@ venv/
 # be a tracked file itself. Ignored so a stray `git add -A` never commits it.
 CHANGE_REPORT.md
 
+# Transient, same treatment as CHANGE_REPORT.md: daily_run.py writes this as
+# the source for the candidate-indicators GitHub issue (see
+# candidate_indicators.py, daily.yml), not meant to be tracked itself.
+CANDIDATE_INDICATORS.md
+
 # Transient: veridem's own working copy of the instant-notice feed, rebuilt
 # every run from the persisted copy synced to the webpage repo (see
 # feed.py's docstring, sync_webpage.py, post_baseline_notice.py). Never
 # meant to be tracked here itself -- the webpage repo's copy is the
 # permanent record.
 /changes.xml
+
+# Personal review copy, not a pipeline output, never tracked.
+data/baseline_queue_review.txt
 
 # OS / editor
 .vscode/

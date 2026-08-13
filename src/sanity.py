@@ -53,6 +53,13 @@ PLAUSIBLE_RANGES = {
     "INTERNAL_MIGRATION_VOLUME": (0, 20_000_000),  # persons
     "INTERNAL_MIGRATION_RATE": (0.0, 20.0),  # percent of population
     "TOTAL_POPULATION": (50_000_000, 150_000_000),  # persons -- wide, just catches unit slips
+    "NUMBER_OF_MARRIAGES": (100_000, 2_000_000),  # persons
+    "CRUDE_MARRIAGE_RATE": (0.0, 30.0),  # per 1,000 population
+    "NUMBER_OF_DIVORCES": (10_000, 500_000),  # persons
+    "CRUDE_DIVORCE_RATE": (0.0, 10.0),  # per 1,000 population
+    "IMMIGRANTS": (0, 5_000_000),  # persons
+    "EMIGRANTS": (0, 5_000_000),  # persons
+    "HEALTHY_LIFE_YEARS": (0.0, 90.0),  # years
 }
 
 # Indicators where any year-on-year move bigger than this absolute amount is
