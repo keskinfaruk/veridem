@@ -28,8 +28,9 @@ CANDIDATE_INDICATORS.md
 # permanent record.
 /changes.xml
 
-# Personal review copy, not a pipeline output, never tracked.
+# Personal review copies, not pipeline outputs, never tracked.
 data/baseline_queue_review.txt
+data/tracked_indicators.txt
 
 # OS / editor
 .vscode/
