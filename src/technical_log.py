@@ -11,8 +11,7 @@ technical change means one of TUIK's service catalogues changed shape, not
 that a demographic figure moved. Never posted anywhere public and never
 goes through a PR -- daily.yml commits this file straight to main (same
 pattern as baseline_notice.py's queue-progress bookkeeping). Kept only as
-reference material for the project owner's own blog writing. See
-ROADMAP_LOG.md for the investigation that led to this.
+reference material for the project owner's own blog writing.
 """
 
 from datetime import datetime, timezone

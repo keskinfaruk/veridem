@@ -93,8 +93,7 @@ def diff_inventory(con, old_snapshot_id: str | None, new_snapshot_id: str) -> pd
 
     A dataflow_id present in `old` but missing from `new` is
     DATAFLOW_WITHDRAWN -- TÜİK does occasionally pull a whole dataflow, not
-    just individual values within one. See ROADMAP_LOG.md for how this was
-    discovered.
+    just individual values within one.
     """
     new = con.execute("SELECT * FROM dataflow_inventory WHERE snapshot_id = ?", [new_snapshot_id]).df()
     old = (
