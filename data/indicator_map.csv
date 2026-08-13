@@ -42,3 +42,5 @@ tuik_press,TR,PRESS_MARRIAGE_DIVORCE_HEADLINE,,,Crude divorce rate,CRUDE_DIVORCE
 tuik_press,TR,PRESS_INTERNATIONAL_MIGRATION,,,Immigrants,IMMIGRANTS,,sex,,,PERSONS,"National total by sex, only the Toplam-Total row of a table that also breaks down by age group (age breakdown not parsed yet) -- first international migration figure in the data bank"
 tuik_press,TR,PRESS_INTERNATIONAL_MIGRATION,,,Emigrants,EMIGRANTS,,sex,,,PERSONS,National total by sex -- see IMMIGRANTS row above
 tuik_press,TR,PRESS_HEALTHY_LIFE_YEARS,,,Healthy life years,HEALTHY_LIFE_YEARS,age_group,sex,,,YEARS,"Health-adjusted life expectancy by age group and sex -- time_period is a multi-year range (e.g. 2022-2024), not a single calendar year"
+tuik_press,TR,PRESS_ASFR,,,Age specific fertility rates,ASFR,age_band,,,,PER_1000,"National age-specific fertility rate by 5-year age band -- press-portal source, faster than the SDMX ASFR series"
+tuik_press,TR,PRESS_MEAN_AGE_FIRST_MARRIAGE,,,Mean age at first marriage by province and sex,MEAN_AGE_FIRST_MARRIAGE,,sex,,,YEARS,"National figure only, extracted from the Turkiye row of an otherwise-provincial table; no combined-sex value exists in the source"

@@ -360,6 +360,21 @@
     "bluesky_uri": null
   },
   {
+    "title": "Current on record -- Mean Age at First Marriage (Türkiye, TurkStat press release, women) 2025: 26.0, up from 25.8 in 2024 (+0.7%)",
+    "bluesky_text": "Current on record -- Mean Age at First Marriage (Türkiye, TurkStat press release, women) 2025: 26.0, up from 25.8 in 2024 (+0.7%). Up -- 22nd consecutive annual increase. Highest value in the series (since 2001).",
+    "feed_content": "Current on record: Mean Age at First Marriage, Türkiye, TurkStat press release, women, 2025\n\n  Population       Women\n  Value            26.0 (2025)\n  Previous         25.8 (2024)\n  Change           +0.2 (+0.7%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Up -- 22nd consecutive annual increase\n    Record         Highest value in the series (since 2001)\n    5-yr average   25.7\n\n  Recent series\n    2021  25.4\n    2022  25.6\n    2023  25.7\n    2024  25.8\n    2025  26.0   <- current",
+    "indicator": "MEAN_AGE_FIRST_MARRIAGE",
+    "ref_area": "TR",
+    "sex": "F",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T233539Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
     "title": "Current on record -- Total Fertility Rate (TFR) (Türkiye, TurkStat press release) 2025: 1.42, down from 1.49 in 2024 (-4.7%)",
     "bluesky_text": "Current on record -- Total Fertility Rate (TFR) (Türkiye, TurkStat press release) 2025: 1.42, down from 1.49 in 2024 (-4.7%). Down -- 11th consecutive annual decline. Lowest value in the series (since 2001).",
     "feed_content": "Current on record: Total Fertility Rate (TFR), Türkiye, TurkStat press release, 2025\n\n  Population       Total\n  Value            1.42 (2025)\n  Previous         1.49 (2024)\n  Change           -0.07 (-4.7%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down -- 11th consecutive annual decline\n    Record         Lowest value in the series (since 2001)\n    5-yr average   1.55\n    Distance from replacement level (2.1): -0.68\n\n  Recent series\n    2021  1.71\n    2022  1.63\n    2023  1.52\n    2024  1.49\n    2025  1.42   <- current",
@@ -400,6 +415,21 @@
     "time_period": "2025",
     "change_class": "BASELINE",
     "snapshot_id": "tuik_press_20260810T012407Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
+    "title": "Current on record -- Mean Age at First Marriage (Türkiye, TurkStat press release, men) 2025: 28.5, up from 28.3 in 2024 (+0.5%)",
+    "bluesky_text": "Current on record -- Mean Age at First Marriage (Türkiye, TurkStat press release, men) 2025: 28.5, up from 28.3 in 2024 (+0.5%). Up -- 24th consecutive annual increase. Highest value in the series (since 2001).",
+    "feed_content": "Current on record: Mean Age at First Marriage, Türkiye, TurkStat press release, men, 2025\n\n  Population       Men\n  Value            28.5 (2025)\n  Previous         28.3 (2024)\n  Change           +0.1 (+0.5%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Up -- 24th consecutive annual increase\n    Record         Highest value in the series (since 2001)\n    5-yr average   28.3\n\n  Recent series\n    2021  28.1\n    2022  28.2\n    2023  28.3\n    2024  28.3\n    2025  28.5   <- current",
+    "indicator": "MEAN_AGE_FIRST_MARRIAGE",
+    "ref_area": "TR",
+    "sex": "M",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T233539Z",
     "posted": false,
     "posted_at": null,
     "bluesky_uri": null
@@ -450,6 +480,21 @@
     "bluesky_uri": null
   },
   {
+    "title": "Current on record -- Age-Specific Fertility Rate (ASFR) (Türkiye, TurkStat press release, ages 15-19) 2025: 9.2, down from 10.2 in 2024 (-10.0%)",
+    "bluesky_text": "Current on record -- Age-Specific Fertility Rate (ASFR) (Türkiye, TurkStat press release, ages 15-19) 2025: 9.2, down from 10.2 in 2024 (-10.0%). Down -- 18th consecutive annual decline. Lowest value in the series (since 2001).",
+    "feed_content": "Current on record: Age-Specific Fertility Rate (ASFR), Türkiye, TurkStat press release, ages 15-19, 2025\n\n  Population       Total\n  Value            9.2 (2025)\n  Previous         10.2 (2024)\n  Change           -1.0 (-10.0%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down -- 18th consecutive annual decline\n    Record         Lowest value in the series (since 2001)\n    5-yr average   11.2\n\n  Recent series\n    2021  13.1\n    2022  12.5\n    2023  11.2\n    2024  10.2\n    2025   9.2   <- current",
+    "indicator": "ASFR",
+    "ref_area": "TR",
+    "sex": "T",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T233538Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
     "title": "Current on record -- Infant Mortality Rate (Türkiye, TurkStat press release) 2025: 7.8, down from 9.0 in 2024 (-13.5%)",
     "bluesky_text": "Current on record -- Infant Mortality Rate (Türkiye, TurkStat press release) 2025: 7.8, down from 9.0 in 2024 (-13.5%). Down vs previous period. Lowest value in the series (since 2009).",
     "feed_content": "Current on record: Infant Mortality Rate, Türkiye, TurkStat press release, 2025\n\n  Population       Total\n  Value            7.8 (2025)\n  Previous         9.0 (2024)\n  Change           -1.2 (-13.5%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down vs previous period\n    Record         Lowest value in the series (since 2009)\n    5-yr average   9.1\n\n  Recent series\n    2021   9.4\n    2022   9.3\n    2023  10.1\n    2024   9.0\n    2025   7.8   <- current",
@@ -475,6 +520,21 @@
     "time_period": "2025",
     "change_class": "BASELINE",
     "snapshot_id": "tuik_press_20260813T211101Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
+    "title": "Current on record -- Age-Specific Fertility Rate (ASFR) (Türkiye, TurkStat press release, ages 20-24) 2025: 53.2, down from 58.5 in 2024 (-9.0%)",
+    "bluesky_text": "Current on record -- Age-Specific Fertility Rate (ASFR) (Türkiye, TurkStat press release, ages 20-24) 2025: 53.2, down from 58.5 in 2024 (-9.0%). Down -- 11th consecutive annual decline. Lowest value in the series (since 2001).",
+    "feed_content": "Current on record: Age-Specific Fertility Rate (ASFR), Türkiye, TurkStat press release, ages 20-24, 2025\n\n  Population       Total\n  Value            53.2 (2025)\n  Previous         58.5 (2024)\n  Change           -5.3 (-9.0%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down -- 11th consecutive annual decline\n    Record         Lowest value in the series (since 2001)\n    5-yr average   62.3\n\n  Recent series\n    2021  71.1\n    2022  67.3\n    2023  61.1\n    2024  58.5\n    2025  53.2   <- current",
+    "indicator": "ASFR",
+    "ref_area": "TR",
+    "sex": "T",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T233538Z",
     "posted": false,
     "posted_at": null,
     "bluesky_uri": null
@@ -510,6 +570,21 @@
     "bluesky_uri": null
   },
   {
+    "title": "Current on record -- Age-Specific Fertility Rate (ASFR) (Türkiye, TurkStat press release, ages 25-29) 2025: 95.9, down from 99.9 in 2024 (-4.0%)",
+    "bluesky_text": "Current on record -- Age-Specific Fertility Rate (ASFR) (Türkiye, TurkStat press release, ages 25-29) 2025: 95.9, down from 99.9 in 2024 (-4.0%). Down -- 11th consecutive annual decline. Lowest value in the series (since 2001).",
+    "feed_content": "Current on record: Age-Specific Fertility Rate (ASFR), Türkiye, TurkStat press release, ages 25-29, 2025\n\n  Population       Total\n  Value            95.9 (2025)\n  Previous         99.9 (2024)\n  Change           -4.0 (-4.0%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down -- 11th consecutive annual decline\n    Record         Lowest value in the series (since 2001)\n    5-yr average   103.7\n\n  Recent series\n    2021  113.6\n    2022  107.9\n    2023  101.2\n    2024   99.9\n    2025   95.9   <- current",
+    "indicator": "ASFR",
+    "ref_area": "TR",
+    "sex": "T",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T233538Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
     "title": "Current on record -- Neonatal Deaths (Türkiye, TurkStat press release, men) 2025: 2,556, down from 3,047 in 2024 (-16.1%)",
     "bluesky_text": "Current on record -- Neonatal Deaths (Türkiye, TurkStat press release, men) 2025: 2,556, down from 3,047 in 2024 (-16.1%). Down -- 4th consecutive annual decline. Lowest value in the series (since 2009).",
     "feed_content": "Current on record: Neonatal Deaths, Türkiye, TurkStat press release, men, 2025\n\n  Population       Men\n  Value            2,556 (2025)\n  Previous         3,047 (2024)\n  Change           -491 (-16.1%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down -- 4th consecutive annual decline\n    Record         Lowest value in the series (since 2009)\n    5-yr average   3,215\n\n  Recent series\n    2021  3,635\n    2022  3,460\n    2023  3,377\n    2024  3,047\n    2025  2,556   <- current",
@@ -535,6 +610,21 @@
     "time_period": "2025",
     "change_class": "BASELINE",
     "snapshot_id": "tuik_press_20260813T211101Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
+    "title": "Current on record -- Age-Specific Fertility Rate (ASFR) (Türkiye, TurkStat press release, ages 30-34) 2025: 79.6, down from 81.5 in 2024 (-2.3%)",
+    "bluesky_text": "Current on record -- Age-Specific Fertility Rate (ASFR) (Türkiye, TurkStat press release, ages 30-34) 2025: 79.6, down from 81.5 in 2024 (-2.3%). Down vs previous period. Lowest in 10 years.",
+    "feed_content": "Current on record: Age-Specific Fertility Rate (ASFR), Türkiye, TurkStat press release, ages 30-34, 2025\n\n  Population       Total\n  Value            79.6 (2025)\n  Previous         81.5 (2024)\n  Change           -1.9 (-2.3%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down vs previous period\n    5-yr average   83.7\n    Recent         Lowest in 10 years\n\n  Recent series\n    2021  89.8\n    2022  86.5\n    2023  81.2\n    2024  81.5\n    2025  79.6   <- current",
+    "indicator": "ASFR",
+    "ref_area": "TR",
+    "sex": "T",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T233538Z",
     "posted": false,
     "posted_at": null,
     "bluesky_uri": null
@@ -570,6 +660,21 @@
     "bluesky_uri": null
   },
   {
+    "title": "Current on record -- Age-Specific Fertility Rate (ASFR) (Türkiye, TurkStat press release, ages 35-39) 2025: 36.7, down from 38.0 in 2024 (-3.3%)",
+    "bluesky_text": "Current on record -- Age-Specific Fertility Rate (ASFR) (Türkiye, TurkStat press release, ages 35-39) 2025: 36.7, down from 38.0 in 2024 (-3.3%). Down -- 8th consecutive annual decline. Lowest in 10 years.",
+    "feed_content": "Current on record: Age-Specific Fertility Rate (ASFR), Türkiye, TurkStat press release, ages 35-39, 2025\n\n  Population       Total\n  Value            36.7 (2025)\n  Previous         38.0 (2024)\n  Change           -1.3 (-3.3%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down -- 8th consecutive annual decline\n    5-yr average   39.7\n    Recent         Lowest in 10 years\n\n  Recent series\n    2021  43.6\n    2022  41.6\n    2023  38.4\n    2024  38.0\n    2025  36.7   <- current",
+    "indicator": "ASFR",
+    "ref_area": "TR",
+    "sex": "T",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T233538Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
     "title": "Current on record -- Neonatal Mortality Rate (Türkiye, TurkStat press release, women) 2025: 4.5, down from 4.9 in 2024 (-8.5%)",
     "bluesky_text": "Current on record -- Neonatal Mortality Rate (Türkiye, TurkStat press release, women) 2025: 4.5, down from 4.9 in 2024 (-8.5%). Down vs previous period. Lowest value in the series (since 2009).",
     "feed_content": "Current on record: Neonatal Mortality Rate, Türkiye, TurkStat press release, women, 2025\n\n  Population       Women\n  Value            4.5 (2025)\n  Previous         4.9 (2024)\n  Change           -0.4 (-8.5%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down vs previous period\n    Record         Lowest value in the series (since 2009)\n    5-yr average   5.1\n\n  Recent series\n    2021  5.6\n    2022  5.1\n    2023  5.4\n    2024  4.9\n    2025  4.5   <- current",
@@ -600,6 +705,21 @@
     "bluesky_uri": null
   },
   {
+    "title": "Current on record -- Age-Specific Fertility Rate (ASFR) (Türkiye, TurkStat press release, ages 40-44) 2025: 8.5, down from 9.0 in 2024 (-5.8%)",
+    "bluesky_text": "Current on record -- Age-Specific Fertility Rate (ASFR) (Türkiye, TurkStat press release, ages 40-44) 2025: 8.5, down from 9.0 in 2024 (-5.8%). Down -- 10th consecutive annual decline. Lowest value in the series (since 2001).",
+    "feed_content": "Current on record: Age-Specific Fertility Rate (ASFR), Türkiye, TurkStat press release, ages 40-44, 2025\n\n  Population       Total\n  Value            8.5 (2025)\n  Previous         9.0 (2024)\n  Change           -0.5 (-5.8%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down -- 10th consecutive annual decline\n    Record         Lowest value in the series (since 2001)\n    5-yr average   9.5\n\n  Recent series\n    2021  10.4\n    2022  10.3\n    2023   9.5\n    2024   9.0\n    2025   8.5   <- current",
+    "indicator": "ASFR",
+    "ref_area": "TR",
+    "sex": "T",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T233538Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
     "title": "Current on record -- Neonatal Mortality Rate (Türkiye, TurkStat press release, men) 2025: 5.6, down from 6.3 in 2024 (-11.9%)",
     "bluesky_text": "Current on record -- Neonatal Mortality Rate (Türkiye, TurkStat press release, men) 2025: 5.6, down from 6.3 in 2024 (-11.9%). Down vs previous period. Lowest value in the series (since 2009).",
     "feed_content": "Current on record: Neonatal Mortality Rate, Türkiye, TurkStat press release, men, 2025\n\n  Population       Men\n  Value            5.6 (2025)\n  Previous         6.3 (2024)\n  Change           -0.7 (-11.9%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Down vs previous period\n    Record         Lowest value in the series (since 2009)\n    5-yr average   6.3\n\n  Recent series\n    2021  6.5\n    2022  6.5\n    2023  6.8\n    2024  6.3\n    2025  5.6   <- current",
@@ -610,6 +730,21 @@
     "time_period": "2025",
     "change_class": "BASELINE",
     "snapshot_id": "tuik_press_20260810T012406Z",
+    "posted": false,
+    "posted_at": null,
+    "bluesky_uri": null
+  },
+  {
+    "title": "Current on record -- Age-Specific Fertility Rate (ASFR) (Türkiye, TurkStat press release, ages 45-49) 2025: 0.7, up from 0.7 in 2024 (+2.8%)",
+    "bluesky_text": "Current on record -- Age-Specific Fertility Rate (ASFR) (Türkiye, TurkStat press release, ages 45-49) 2025: 0.7, up from 0.7 in 2024 (+2.8%). Up vs previous period.",
+    "feed_content": "Current on record: Age-Specific Fertility Rate (ASFR), Türkiye, TurkStat press release, ages 45-49, 2025\n\n  Population       Total\n  Value            0.7 (2025)\n  Previous         0.7 (2024)\n  Change           +0.0 (+2.8%)\n\n  Note             Not a new release -- this is the value already on\n                   record in veridem's data bank, posted as part of a\n                   one-time backfill so this feed has content to show\n                   before the next real change occurs.\n\n  Trend context\n    Direction      Up vs previous period\n    5-yr average   0.7\n\n  Recent series\n    2021  0.7\n    2022  0.8\n    2023  0.7\n    2024  0.7\n    2025  0.7   <- current",
+    "indicator": "ASFR",
+    "ref_area": "TR",
+    "sex": "T",
+    "source": "tuik_press",
+    "time_period": "2025",
+    "change_class": "BASELINE",
+    "snapshot_id": "tuik_press_20260813T233538Z",
     "posted": false,
     "posted_at": null,
     "bluesky_uri": null

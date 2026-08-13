@@ -72,18 +72,18 @@ RECENT_WINDOW_YEARS = 10
 NOTICE_CLASSES = {"NEW_PERIOD", "REVISED", "WITHDRAWN"}
 
 # Curated per-release subset for source == 'tuik_press': a single TurkStat
-# press release can flip ~10-26 series at once (the mortality release alone
-# is 10 indicators x up to 3 sexes). Posting every one separately would be
-# a burst, not the steady one-fact-at-a-time cadence every other post on
-# this channel has. Bundling them into one multi-fact post was considered
-# and rejected -- it breaks the "one number, no interpretation" simplicity
-# every existing post has. Instead: only these headline indicators (Total
-# sex only) are eligible for an instant notice at all when source is
-# 'tuik_press' -- everything else from that release stays fully visible in
-# the data bank and CHANGE_REPORT.md, it just doesn't trigger a public post.
+# press release can flip ~10-26 series at once. Posting every one
+# separately would be a burst, not the steady one-fact-at-a-time cadence
+# every other post on this channel has. Only these headline indicators
+# (Total sex only, except where noted) are eligible for an instant notice
+# when source is 'tuik_press' -- everything else from that release stays
+# visible in the data bank and CHANGE_REPORT.md without posting.
 CURATED_PRESS_INDICATORS = {
     ("TFR", "T"),                          # Birth Statistics release headline
     ("ADOLESCENT_FERTILITY_RATE", "T"),    # Birth Statistics
+    ("CBR", "T"),                          # Birth Statistics
+    ("MEAN_AGE_CHILDBEARING", "T"),        # Birth Statistics
+    ("MEAN_AGE_FIRST_BIRTH", "T"),         # Birth Statistics
     ("CDR", "T"),                          # Death and Causes of Death release headline
     ("INFANT_MORTALITY_RATE", "T"),        # Death and Causes of Death
     ("UNDER5_MORTALITY_RATE", "T"),        # Death and Causes of Death
@@ -91,43 +91,33 @@ CURATED_PRESS_INDICATORS = {
     ("TOTAL_POPULATION", "T"),             # Address Based Population Registration System release headline
     ("CRUDE_MARRIAGE_RATE", "T"),          # Marriage and Divorce Statistics release headline
     ("CRUDE_DIVORCE_RATE", "T"),           # Marriage and Divorce Statistics
+    ("MEAN_AGE_FIRST_MARRIAGE", "M"),      # Marriage and Divorce Statistics -- no combined-sex
+    ("MEAN_AGE_FIRST_MARRIAGE", "F"),      # figure exists in the source table, so both post
     ("IMMIGRANTS", "T"),                   # International Migration Statistics release headline
     ("EMIGRANTS", "T"),                    # International Migration Statistics
-    # HEALTHY_LIFE_YEARS deliberately not curated -- broken into 19 age
-    # groups with no single national figure; filter_curated_press() below
-    # only matches on (indicator, sex), so curating it as-is would make
-    # every age group separately eligible instead of one headline value.
+    # ASFR and HEALTHY_LIFE_YEARS deliberately not curated -- both are
+    # broken into several age groups with no single national figure;
+    # filter_posting_sources() below only matches on (indicator, sex), so
+    # curating either as-is would make every age group separately
+    # eligible instead of one headline value.
 }
 
 
-def filter_curated_press(changes: pd.DataFrame) -> pd.DataFrame:
-    """Second gate, run after filter_turkiye() in build_notices() below --
-    restricts source=='tuik_press' rows to CURATED_PRESS_INDICATORS; every
-    other source passes through unrestricted, since a single SDMX/Eurostat
-    dataflow update has never produced this kind of same-day multi-series
-    burst in practice.
+def filter_posting_sources(changes: pd.DataFrame) -> pd.DataFrame:
+    """Second gate, run after filter_turkiye() in build_notices() below.
+
+    source == 'tuik' (SDMX) never posts: tuik_press covers the same
+    indicators faster, so SDMX is fetched and stored for the archive but
+    is no longer a public-notice source. source == 'tuik_press' is
+    restricted to CURATED_PRESS_INDICATORS. Every other source (eurostat)
+    passes through unrestricted.
     """
     if changes.empty:
         return changes
+    is_tuik_sdmx = changes["source"] == "tuik"
     is_press = changes["source"] == "tuik_press"
-    allowed = changes.apply(lambda r: (r["indicator"], r["sex"]) in CURATED_PRESS_INDICATORS, axis=1)
-    return changes[~is_press | allowed]
-
-
-def _dedupe_same_day_sources(changes: pd.DataFrame) -> pd.DataFrame:
-    """Third gate: when tuik_press and another source both have an eligible
-    notice for the same (indicator, ref_area, sex, time_period) this run,
-    keep only the tuik_press one and drop the rest -- press releases are
-    usually earlier/fresher, so a same-day SDMX/Eurostat update reads as
-    confirmation, not a second real event.
-    """
-    if changes.empty:
-        return changes
-    key_cols = ["indicator", "ref_area", "sex", "time_period"]
-    press_keys = changes.loc[changes["source"] == "tuik_press", key_cols].drop_duplicates()
-    merged = changes.merge(press_keys.assign(_has_press=True), on=key_cols, how="left")
-    keep = (merged["source"] == "tuik_press") | merged["_has_press"].isna()
-    return changes[keep.values].reset_index(drop=True)
+    press_allowed = changes.apply(lambda r: (r["indicator"], r["sex"]) in CURATED_PRESS_INDICATORS, axis=1)
+    return changes[~is_tuik_sdmx & (~is_press | press_allowed)]
 
 
 # Some indicators (e.g. mean age at first marriage) carry separate male and
@@ -337,7 +327,7 @@ def build_notices(changes: pd.DataFrame, con, base_url: str | None = None) -> li
     the byte-offset facet math -- optional, unused until a dashboard
     exists to link to.
     """
-    tr_changes = _dedupe_same_day_sources(filter_curated_press(filter_turkiye(changes)))
+    tr_changes = filter_posting_sources(filter_turkiye(changes))
     notices = []
     for _, row in tr_changes.iterrows():
         history = pd.Series(dtype=float)

@@ -53,6 +53,10 @@ from technical_log import append_entry as append_technical_log_entry
 
 REPORT_PATH = Path(__file__).resolve().parent.parent / "CHANGE_REPORT.md"
 CANDIDATE_REPORT_PATH = Path(__file__).resolve().parent.parent / candidate_indicators.CANDIDATE_REPORT_PATH_NAME
+# Appended to every instant notice's Bluesky text. Points at the stub
+# landing page for now; becomes more useful once Phase 5 has real
+# indicator pages, no template change needed then.
+DASHBOARD_URL = "https://veridem.faruk.page/"
 
 
 def _run_fetchers() -> list[str]:
@@ -187,7 +191,7 @@ def _publish_instant_notices(obs_changes: pd.DataFrame, con) -> tuple[list[str],
     changes could be entirely non-Turkiye (e.g. a Eurostat figure for
     another country), in which case changes.xml is correctly never touched.
     """
-    notices = build_notices(obs_changes, con)
+    notices = build_notices(obs_changes, con, base_url=DASHBOARD_URL)
     if not notices:
         return [], False
 

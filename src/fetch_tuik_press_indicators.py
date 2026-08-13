@@ -16,12 +16,14 @@ indicator produced here, for discoverability.
 never the press_id: TÜİK issues a new press_id every year, and snapshot
 history is keyed by (source, dataflow_id).
 
-Seven tables covered, all national-level: basic fertility indicators,
+Nine tables covered, all national-level: basic fertility indicators,
 basic mortality indicators, internal migration volume, total population
 and growth rate (ABPRS), marriage/divorce headline figures, international
-migration totals by sex, and healthy life years by age group and sex
-(the only one with an `age` dimension and a multi-year `time_period`
-range, e.g. "2022-2024").
+migration totals by sex, healthy life years by age group and sex (the
+only one with an `age` dimension and a multi-year `time_period` range,
+e.g. "2022-2024"), age-specific fertility rate, and mean age at first
+marriage (both extracted from an otherwise-provincial table's national
+total row).
 """
 
 import re
@@ -358,7 +360,69 @@ def parse_healthy_life_years_table(df: pd.DataFrame) -> list[dict]:
     return rows
 
 
-# Driver, shared by all seven tables above: (theme title, table title,
+# Age-specific fertility rate -- long format, one row per year, 7 age-band
+# columns (15-19 .. 45-49). No sex breakdown (rate is per woman).
+
+ASFR_TABLE = "Age specific fertility rates"
+ASFR_DATAFLOW_ID = "PRESS_ASFR"
+ASFR_AGE_COLUMNS = {1: "Y15T19", 2: "Y20T24", 3: "Y25T29", 4: "Y30T34", 5: "Y35T39", 6: "Y40T44", 7: "Y45T49"}
+
+
+def parse_asfr_table(df: pd.DataFrame) -> list[dict]:
+    rows = []
+    for _, r in df.iterrows():
+        year, flag = _clean_year(r[0])
+        if year is None:
+            continue
+        for col, age_code in ASFR_AGE_COLUMNS.items():
+            value = _to_float(r[col])
+            if value is None:
+                continue
+            rows.append(
+                {"indicator": "ASFR", "sex": "T", "age": age_code, "time_period": year, "obs_value": value, "obs_flag": flag, "unit": "PER_1000"}
+            )
+    return rows
+
+
+# Mean age at first marriage, by sex -- national only, extracted from the
+# "Türkiye" row of the provincial table (no separate national-only table
+# exists for this figure). No combined-sex column exists in the source
+# table, so this produces M/F rows only, never a T row.
+
+MARRIAGE_AGE_TABLE = "Mean age at first marriage by province and sex"
+MARRIAGE_AGE_DATAFLOW_ID = "PRESS_MEAN_AGE_FIRST_MARRIAGE"
+_NATIONAL_ROW_LABELS = {"türkiye", "turkiye", "turkey"}
+
+
+def parse_mean_age_first_marriage_table(df: pd.DataFrame) -> list[dict]:
+    header_row = 3  # year headers, one per 3-column (male, female, spacer) block
+    year_cols: dict[int, tuple[str, str | None]] = {}
+    for col in range(1, df.shape[1]):
+        year, flag = _clean_year(df.iat[header_row, col])
+        if year:
+            year_cols[col] = (year, flag)
+    if not year_cols:
+        raise ValueError(f"{MARRIAGE_AGE_TABLE}: no year columns found in header row {header_row} -- table shape changed?")
+
+    national_row = next(
+        (i for i in range(header_row + 1, len(df)) if str(df.iat[i, 0]).strip().lower() in _NATIONAL_ROW_LABELS),
+        None,
+    )
+    if national_row is None:
+        raise ValueError(f"{MARRIAGE_AGE_TABLE}: couldn't find the national (Türkiye) row -- table shape changed?")
+
+    rows = []
+    for col, (year, flag) in year_cols.items():
+        male = _to_float(df.iat[national_row, col])
+        female = _to_float(df.iat[national_row, col + 1]) if col + 1 < df.shape[1] else None
+        if male is not None:
+            rows.append({"indicator": "MEAN_AGE_FIRST_MARRIAGE", "sex": "M", "time_period": year, "obs_value": male, "obs_flag": flag, "unit": "YEARS"})
+        if female is not None:
+            rows.append({"indicator": "MEAN_AGE_FIRST_MARRIAGE", "sex": "F", "time_period": year, "obs_value": female, "obs_flag": flag, "unit": "YEARS"})
+    return rows
+
+
+# Driver, shared by all nine tables above: (theme title, table title,
 # dataflow_id, parser).
 TARGETS = [
     ("Birth Statistics", FERTILITY_TABLE, FERTILITY_DATAFLOW_ID, parse_fertility_table),
@@ -368,6 +432,8 @@ TARGETS = [
     ("Marriage and Divorce Statistics", MARRIAGE_DIVORCE_TABLE, MARRIAGE_DIVORCE_DATAFLOW_ID, parse_marriage_divorce_table),
     ("International Migration Statistics", MIGRATION_AGE_TABLE, MIGRATION_AGE_DATAFLOW_ID, parse_international_migration_table),
     ("Life Tables", HEALTHY_LIFE_YEARS_TABLE, HEALTHY_LIFE_YEARS_DATAFLOW_ID, parse_healthy_life_years_table),
+    ("Birth Statistics", ASFR_TABLE, ASFR_DATAFLOW_ID, parse_asfr_table),
+    ("Marriage and Divorce Statistics", MARRIAGE_AGE_TABLE, MARRIAGE_AGE_DATAFLOW_ID, parse_mean_age_first_marriage_table),
 ]
 
 # (theme_title, table_title) pairs already parsed above, read by

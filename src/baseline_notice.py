@@ -269,7 +269,7 @@ def build_queue(con, base_url: str | None = None, only_latest_year: bool = True)
 # itself carries (indicator_map.csv has no domain column) -- display/
 # ordering-only, scoped to this queue, never written back to the data bank.
 _DOMAIN = {}
-for _ind in ("TFR", "ADOLESCENT_FERTILITY_RATE", "MEAN_AGE_CHILDBEARING", "MEAN_AGE_FIRST_BIRTH", "TOTAL_BIRTHS", "CBR"):
+for _ind in ("TFR", "ASFR", "ADOLESCENT_FERTILITY_RATE", "MEAN_AGE_CHILDBEARING", "MEAN_AGE_FIRST_BIRTH", "TOTAL_BIRTHS", "CBR"):
     _DOMAIN[_ind] = "Fertility"
 for _ind in (
     "CDR", "INFANT_DEATHS", "INFANT_MORTALITY_RATE", "NEONATAL_DEATHS", "NEONATAL_MORTALITY_RATE",
