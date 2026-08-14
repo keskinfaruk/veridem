@@ -1,6 +1,6 @@
 """
 Posts the next due entry from the one-time baseline-notice queue (see
-baseline_notice.py), spaced at least MIN_GAP apart so the feed and
+baseline_notice.py), at most one per UTC calendar day, so the feed and
 @veridemdata.bsky.social don't show many entries all on the same day --
 which would itself look like an unannounced data dump rather than either a
 real release cadence or the honest one-time seed it actually is.
@@ -32,16 +32,13 @@ import json
 import os
 import shutil
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 import bluesky_client
 from baseline_notice import QUEUE_PATH, append_new_series, interleave_by_domain
 from feed import FEED_PATH, append_notices
 from schema import connect
-
-# One post a day at most, so the queue drains gradually rather than in a burst.
-MIN_GAP = timedelta(days=1)
 
 
 def _load_queue() -> list[dict]:
@@ -58,11 +55,15 @@ def _save_queue(queue: list[dict]) -> None:
 
 
 def _due(queue: list[dict], now: datetime) -> bool:
+    """Due once the UTC calendar date has advanced past the last post's --
+    a date comparison rather than an exact 24h gap, so a run landing a few
+    minutes earlier than the previous day's (cron drift, a manual dispatch)
+    can't push a post out to the following day."""
     posted_ats = [e["posted_at"] for e in queue if e["posted_at"]]
     if not posted_ats:
         return True
     last = max(datetime.fromisoformat(ts) for ts in posted_ats)
-    return now - last >= MIN_GAP
+    return now.date() > last.date()
 
 
 def _seed_local_feed(webpage_repo: Path) -> None:
@@ -98,7 +99,7 @@ def post_next(webpage_repo: Path, now: datetime | None = None) -> tuple[bool, in
         print("Baseline notice queue is fully drained -- nothing to post.")
         return False, added
     if not _due(queue, now):
-        print(f"Not due yet -- last baseline post was under the {MIN_GAP} gap.")
+        print("Not due yet -- already posted a baseline notice today (UTC).")
         return False, added
 
     entry = pending[0]

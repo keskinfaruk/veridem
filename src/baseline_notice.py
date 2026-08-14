@@ -47,6 +47,7 @@ from instant_notice import (
     _prior_point,
     _recent_extreme_note,
     _sanity_flags,
+    filter_posting_sources,
 )
 from report import (
     _recent_series_lines,
@@ -230,8 +231,17 @@ def build_queue(con, base_url: str | None = None, only_latest_year: bool = True)
     yet at the bank's own most recent year -- computed live from the data,
     not hardcoded, so a later rebuild naturally adjusts as more indicators
     catch up.
+
+    Applies instant_notice.filter_posting_sources() before anything else --
+    the same public-posting eligibility gate the real-time change path
+    uses (source == 'tuik' never posts, source == 'tuik_press' only for
+    CURATED_PRESS_INDICATORS). Without this, a series added to the data
+    bank purely for archive/dashboard purposes (e.g. raw SDMX indicators
+    outside the curated set) would still surface as a public baseline
+    notice here, contradicting the rule the real-time path enforces for
+    the same series.
     """
-    rows = current_tr_rows(con)
+    rows = filter_posting_sources(current_tr_rows(con))
     if only_latest_year and not rows.empty:
         latest_year = rows["time_period"].max()
         dropped = rows[rows["time_period"] != latest_year]
