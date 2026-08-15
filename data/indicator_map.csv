@@ -1,9 +1,4 @@
 source,agency,dataflow_id,version,selector_dim,source_indicator_code,indicator,age_dim,sex_dim,fixed_dim,fixed_value,unit,description
-tuik,TR,DF_DOGUM_TEMEL_DOG_GOST,1.0,,NG_TDH,TFR,,,,,,Total fertility rate
-tuik,TR,DF_DOGUM_YASA_OZEL_DOGHIZ,1.0,,NG_DH_B,ASFR,ANNE_YAS_GRUP,,,,,Age-specific fertility rate
-tuik,TR,DF_DOGUM_ANNE_ORTYAS,1.0,,NG_AOY,MEAN_AGE_CHILDBEARING,,,,,,Mean age of mother at childbearing
-tuik,TR,DF_DOGUM_KDH,1.0,,NG_KDH,CBR,,,,,,Crude birth rate
-tuik,TR,DF_EVLENME_ORT_ILK_YAS,1.0,,NG_OIEY,MEAN_AGE_FIRST_MARRIAGE,,SEX,,,,Mean age at first marriage
 eurostat,ESTAT,DEMO_GIND,1.0,indic_de,GBIRTHRT,CBR,,,,,PER_1000,Crude birth rate
 eurostat,ESTAT,DEMO_GIND,1.0,indic_de,GDEATHRT,CDR,,,,,PER_1000,Crude death rate
 eurostat,ESTAT,DEMO_GIND,1.0,indic_de,NATGROWRT,NATURAL_GROWTH_RATE,,,,,PER_1000,Crude rate of natural population change
@@ -44,3 +39,25 @@ tuik_press,TR,PRESS_INTERNATIONAL_MIGRATION,,,Emigrants,EMIGRANTS,,sex,,,PERSONS
 tuik_press,TR,PRESS_HEALTHY_LIFE_YEARS,,,Healthy life years,HEALTHY_LIFE_YEARS,age_group,sex,,,YEARS,"Health-adjusted life expectancy by age group and sex -- time_period is a multi-year range (e.g. 2022-2024), not a single calendar year"
 tuik_press,TR,PRESS_ASFR,,,Age specific fertility rates,ASFR,age_band,,,,PER_1000,"National age-specific fertility rate by 5-year age band -- press-portal source, faster than the SDMX ASFR series"
 tuik_press,TR,PRESS_MEAN_AGE_FIRST_MARRIAGE,,,Mean age at first marriage by province and sex,MEAN_AGE_FIRST_MARRIAGE,,sex,,,YEARS,"National figure only, extracted from the Turkiye row of an otherwise-provincial table; no combined-sex value exists in the source"
+tuik,TR,DF_DOGUM_TEMEL_DOG_GOST_C,1.0,,NG_TDH,TFR,,,,,,Total fertility rate. Dataflow renamed from DF_DOGUM_TEMEL_DOG_GOST
+tuik,TR,DF_DOGUM_TEMEL_DOG_GOST_C,1.0,,NG_KDH,CBR,,,,,,Crude birth rate. Dataflow renamed from DF_DOGUM_KDH
+tuik,TR,DF_DOGUM_TEMEL_DOG_GOST_C,1.0,,NG_AOY,MEAN_AGE_CHILDBEARING,,,,,,Mean age of mother at childbearing. Dataflow renamed from DF_DOGUM_ANNE_ORTYAS
+tuik,TR,DF_DOGUM_YASA_OZEL_DOGHIZ_C,1.0,,NG_DH_B,ASFR,ANNE_YAS_GRUP,,,,,Age-specific fertility rate. Dataflow renamed from DF_DOGUM_YASA_OZEL_DOGHIZ
+tuik,TR,DF_EVLENME_ORT_ILK_EVL_YAS,1.0,,NG_OIEY,MEAN_AGE_FIRST_MARRIAGE,,SEX,,,,Mean age at first marriage. Dataflow renamed from DF_EVLENME_ORT_ILK_YAS
+tuik,TR,DF_DOGUM_TEMEL_DOG_GOST_C,1.0,,NG_ADH,ADOLESCENT_FERTILITY_RATE,,,,,PER_1000,Adolescent (15-19) fertility rate
+tuik,TR,DF_DOGUM_TEMEL_DOG_GOST_C,1.0,,NG_IDOAY,MEAN_AGE_FIRST_BIRTH,,,,,YEARS,Mean age of mother at birth of first child
+tuik,TR,DF_DOGUM_TEMEL_DOG_GOST_C,1.0,,NG_TDS,TOTAL_BIRTHS,,,,,PERSONS,Number of live births
+tuik,TR,DF_DOGUM_GDH_C,1.0,,NG_GDH,GFR,,,,,PER_1000,General fertility rate
+tuik,TR,DF_DOGUM_ANNEYASGR_C,1.0,,NG_DS,BIRTHS_BY_MOTHER_AGE,ANNE_YAS_GRUP,,,,PERSONS,Number of live births by mother's age group
+tuik,TR,DF_DOGUM_BABAYASGR_C,1.0,,NG_DS,BIRTHS_BY_FATHER_AGE,BABA_YAS_GRUP,,,,PERSONS,Number of live births by father's age group
+tuik,TR,DF_KABA_BOSANMA_HIZI,1.0,,NG_KBH,CRUDE_DIVORCE_RATE,,,,,PER_1000,Crude divorce rate
+tuik,TR,DF_KABA_EVLENME_HIZI,1.0,,NG_KEH,CRUDE_MARRIAGE_RATE,,,,,PER_1000,Crude marriage rate
+tuik,TR,DF_BOSANMA_IL_ILCE,1.0,,NG_BS,NUMBER_OF_DIVORCES,,,,,PERSONS,National count of divorces by year
+tuik,TR,DF_EVLENME_IL_ILCE,1.0,,NG_ES,NUMBER_OF_MARRIAGES,,,,,PERSONS,National count of marriages by year
+tuik,TR,DF_BOSANMA_VEL_VER_ORAN,1.0,,NG_AVVCO,GUARDIANSHIP_RATE_MOTHER,,,,,PERCENT,Share of children from divorce given guardianship to the mother
+tuik,TR,DF_BOSANMA_VEL_VER_ORAN,1.0,,NG_BVVCO,GUARDIANSHIP_RATE_FATHER,,,,,PERCENT,Share of children from divorce given guardianship to the father
+tuik,TR,DF_BOSANMA_VEL_VER_ORAN,1.0,,NG_VVCS,CHILDREN_GIVEN_GUARDIANSHIP,,,,,PERSONS,Number of children given guardianship in a divorce
+tuik,TR,DF_EVLENME_AKRABA_EVLILIK,1.0,,NG_AEO,COUSIN_MARRIAGE_RATE,,,,,PERCENT,Proportion of marriages between first cousins
+tuik,TR,DF_EVLENME_AKRABA_EVLILIK,1.0,,NG_AES,COUSIN_MARRIAGES,,,,,PERSONS,Number of marriages between first cousins
+tuik,TR,DF_EVLENME_1617_ORAN,1.0,,NG_16_17_EO,CHILD_MARRIAGE_RATE_16_17,,SEX,,,PERCENT,Marriage rate among the 16-17 age group
+tuik,TR,DF_EVLENME_ORT_EVL_YAS,1.0,,NG_OEY,MEAN_AGE_AT_MARRIAGE,,SEX,,,YEARS,"Mean age at marriage (any, not only first)"
