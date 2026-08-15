@@ -6,13 +6,13 @@ changed. *veri* (data) + *demografi*.
 
 ## How it works
 
-A daily scheduled run fetches every watched indicator from TurkStat's SDMX
-Web Service, TurkStat's press-release tables, and Eurostat, and writes each
-fetch as an immutable Parquet snapshot. Each fresh snapshot is diffed against
-the previous one and every difference is classified: a new period, a
-revision, a withdrawal, or a new series. A demographic change opens a pull
-request carrying a readable change report, and merging it is what updates the
-data bank.
+A scheduled run fetches every watched indicator from TurkStat's press-release
+tables and Eurostat daily, and from TurkStat's SDMX Web Service weekly, then
+writes each fetch as an immutable Parquet snapshot. Each fresh snapshot is
+diffed against the previous one and every difference is classified: a new
+period, a revision, a withdrawal, or a new series. A demographic change opens
+a pull request carrying a readable change report, and merging it is what
+updates the data bank.
 
 Published output has two forms, both limited to a curated list of indicators
 for Türkiye (`data/curated_cards.csv`). A new year's figure or a revision to
