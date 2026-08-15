@@ -1,21 +1,17 @@
 """
-Syncs the instant-notice feed to the public `webpage` repo (faruk.page),
-since `veridem` itself is private and changes.xml would otherwise never be
-reachable by anyone outside the account.
+Syncs the instant-notice feed to the public `webpage` repo (faruk.page).
 
-Two things get updated in a checked-out copy of the webpage repo:
-    - veridem/changes.xml  -- a straight copy of this repo's own feed.py
-      output, byte for byte.
-    - veridem/index.html   -- the human-readable list, regenerated from the
-      same Atom entries. Static, matching the site's "plain HTML, no build
-      step" approach -- not a client-side fetch of the XML.
+Two files are updated in a checked-out copy of that repo:
+    veridem/changes.xml   a byte-for-byte copy of feed.py's output
+    veridem/index.html    the human-readable list, regenerated from the same
+                          entries as static HTML, matching the site's
+                          no-build-step approach
 
-Direct commit, no PR -- this channel's output is facts-only and doesn't
-need the review gate blog posts do.
+Direct commit, no PR: this channel's output is facts only and does not need
+the review gate blog posts do.
 
-Only meant to run when daily_run.py actually produced at least one Turkiye
-notice this run -- calling it with an unchanged changes.xml is harmless
-(git just has nothing to commit) but wasteful.
+Meant to run only when daily_run.py produced at least one Turkiye notice.
+Running it with an unchanged feed is harmless but wasteful.
 """
 
 import html
@@ -41,11 +37,11 @@ def _tag(name: str) -> str:
 
 
 def _read_entries(feed_path: Path) -> list[dict]:
-    """`text` reads <summary> (bluesky_text) rather than <title> (the bare
-    headline), so the page shows the same level of detail as the Bluesky
-    post -- bluesky_text already contains the title as its own prefix, so
-    nothing is lost. The full ASCII report block lives in <content>, not
-    read here; see feed.py's _build_entry()."""
+    """
+    `text` reads <summary> (bluesky_text) rather than <title>, so the page
+    matches the Bluesky post's detail; bluesky_text already contains the title
+    as its prefix, so nothing is lost.
+    """
     root = ET.parse(feed_path).getroot()
     entries = []
     for entry in root.findall(_tag("entry")):
@@ -73,18 +69,18 @@ def _render_list_html(entries: list[dict]) -> str:
 
 
 def update_index_html(index_path: Path, entries: list[dict]) -> None:
-    html = index_path.read_text(encoding="utf-8")
+    page = index_path.read_text(encoding="utf-8")
 
-    start = html.index(LIST_START) + len(LIST_START)
-    end = html.index(LIST_END, start)
-    html = html[:start] + "\n" + _render_list_html(entries) + "\n\t" + html[end:]
+    start = page.index(LIST_START) + len(LIST_START)
+    end = page.index(LIST_END, start)
+    page = page[:start] + "\n" + _render_list_html(entries) + "\n\t" + page[end:]
 
     # The "no updates yet" placeholder only makes sense while the list is
-    # genuinely empty -- remove it entirely once there's real content.
+    # empty; remove it once there is real content.
     if entries:
-        html = EMPTY_NOTE_RE.sub("", html)
+        page = EMPTY_NOTE_RE.sub("", page)
 
-    index_path.write_text(html, encoding="utf-8")
+    index_path.write_text(page, encoding="utf-8")
 
 
 def _run(cmd: list[str], cwd: Path) -> None:
@@ -92,8 +88,8 @@ def _run(cmd: list[str], cwd: Path) -> None:
 
 
 def sync(webpage_repo: Path) -> bool:
-    """Returns True if there was something to commit, False if the sync
-    left webpage's working tree unchanged (nothing new to push)."""
+    """True if there was something to commit, False if the sync left the
+    webpage working tree unchanged."""
     target_dir = webpage_repo / "veridem"
     target_dir.mkdir(exist_ok=True)
 

@@ -1,81 +1,61 @@
 """
-One-time backfill: "current on record" notices for every Turkiye series
-already sitting in the data bank, seeding the instant-notice feed /
-@veridemdata.bsky.social / faruk.page/veridem/ with data that's already
-been fetched, rather than waiting for the next real TurkStat/Eurostat
-release to trickle these out naturally.
+One-time backfill: "current on record" notices for every Türkiye series
+already in the data bank, seeding the feed and Bluesky account with data
+already fetched rather than waiting for the next real release.
 
-This is a deliberate, one-time exception to instant_notice.py's own rule
-that NEW_SERIES stays out of NOTICE_CLASSES because a series debuting with
-its whole fetched history isn't a fresh publication, it's backfill noise.
-These *are* that backfill. What makes posting them anyway honest rather
-than a rule violation: every notice this module builds leads with
-"Current on record", never with language that implies a fresh release,
-and headline()/bluesky_text() in instant_notice.py are never called from
-here for that reason -- their output reads exactly like a real release
-notice, which would be misleading for a value that's been sitting in the
-bank for up to a year.
+This is a deliberate exception to instant_notice.py's rule that NEW_SERIES
+stays out of NOTICE_CLASSES because a series debuting with its whole history
+is backfill, not a fresh publication. These *are* that backfill. What keeps
+posting them honest: every notice leads with "Current on record", and
+instant_notice.headline()/bluesky_text() are never called from here, since
+their wording reads like a real release notice and would mislead for a value
+that has sat in the bank for up to a year.
 
-The trend facts folded in after that prefix (direction, streak, 10-year
-high/low, sanity flags) are real and independently useful, so this reuses
-instant_notice.py's own comparison/streak/record/sanity-flag machinery
-rather than writing a thinner version from scratch.
+The trend facts after that prefix are real and independently useful, so the
+comparison, streak, record and sanity machinery is reused rather than
+rewritten thinner.
 
-Deliberately NOT wired into daily_run.py's normal change-detection path --
-this module is only ever invoked by post_baseline_notice.py, which drains
-a fixed queue built once by build_queue() below.
-
-Reuses instant_notice._area_source_label() directly (not duplicated here),
-including its age-band clause -- so a real ASFR change notice through the
-normal instant-notice path gets the same disambiguation these baseline
-notices needed.
+Not wired into daily_run.py. Only post_baseline_notice.py invokes this,
+draining a fixed queue built once by build_queue().
 """
 
 import json
+from collections import defaultdict, deque
 from pathlib import Path
 
 import pandas as pd
 
 from diff import SERIES_KEY, latest_two_snapshots
-from schema import connect
 from instant_notice import (
-    BLUESKY_MAX_GRAPHEMES,
-    _area_source_label,
-    _format_number,
-    _indicator_label,
-    _prior_comparison_clause,
-    _prior_point,
-    _recent_extreme_note,
-    _sanity_flags,
+    area_source_label,
+    compose_post,
     filter_posting_sources,
+    prior_comparison_clause,
+    recent_extreme_note,
 )
 from report import (
+    _prior_point,
     _recent_series_lines,
     _trend_context_lines,
-    direction,
     format_number,
+    indicator_label,
     population_type_label,
-    record,
     series_history,
 )
+from schema import connect
 
 BASELINE_PREFIX = "Current on record"
 
-# Committed to git deliberately -- this is the persistent record of which
-# entries have already gone out and when, read and rewritten by
-# post_baseline_notice.py on every scheduled run. Built once by main()
-# below; never regenerated automatically afterwards, so a re-run of this
-# module can never silently reset already-posted entries back to pending.
+# Committed to git deliberately: the persistent record of which entries have
+# gone out and when, rewritten by post_baseline_notice.py on each run. Built
+# once by main(), never regenerated automatically, so a re-run can never
+# reset already-posted entries back to pending.
 QUEUE_PATH = Path(__file__).resolve().parent.parent / "data" / "baseline_notices_queue.json"
 
 
 def current_tr_rows(con) -> pd.DataFrame:
-    """One row per distinct Turkiye series currently in the data bank, each
-    carrying its own latest snapshot's newest time_period/value -- the same
-    "latest snapshot per dataflow" idiom daily_run.py's diffing already
-    uses (latest_two_snapshots()), just reading the newest snapshot
-    unconditionally instead of diffing it against the one before.
-    """
+    """One row per distinct Türkiye series in the bank, each carrying its
+    latest snapshot's newest period and value."""
     dataflows = con.execute("SELECT DISTINCT source, dataflow_id FROM observations").df()
     frames = []
     for _, df_row in dataflows.iterrows():
@@ -88,8 +68,7 @@ def current_tr_rows(con) -> pd.DataFrame:
         ).df()
         if snap.empty:
             continue
-        idx = snap.groupby(SERIES_KEY)["time_period"].idxmax()
-        latest = snap.loc[idx].copy()
+        latest = snap.loc[snap.groupby(SERIES_KEY)["time_period"].idxmax()].copy()
         latest["new_value"] = latest["obs_value"]
         latest["new_snapshot_id"] = latest["snapshot_id"]
         frames.append(latest)
@@ -99,147 +78,84 @@ def current_tr_rows(con) -> pd.DataFrame:
 
 
 def baseline_headline(row: pd.Series, history: pd.Series) -> str:
-    """Like instant_notice._value_headline(), but always framed as a
-    baseline restatement, never as something that just happened -- no
-    "revised from" clause (these were never actually revised today), no
-    wording borrowed from the real change-notice template.
-    """
-    area_source = _area_source_label(row)
-    label = _indicator_label(row["indicator"])
-    value = row["new_value"]
-    period = row["time_period"]
-    text = f"{BASELINE_PREFIX} -- {label} ({area_source}) {period}: {_format_number(value, row['indicator'])}"
-
+    """Framed as a baseline restatement, never as something that just
+    happened: no "revised from" clause, no wording borrowed from the real
+    change-notice template."""
+    indicator, period = row["indicator"], row["time_period"]
+    text = (
+        f"{BASELINE_PREFIX} -- {indicator_label(indicator)} ({area_source_label(row)}) "
+        f"{period}: {format_number(row['new_value'], indicator)}"
+    )
     prior_period, prior_value = _prior_point(history, period)
     if prior_period is not None:
-        text += ", " + _prior_comparison_clause(value, prior_period, prior_value, row["indicator"])
+        text += ", " + prior_comparison_clause(row["new_value"], prior_period, prior_value, indicator)
     return text
 
 
 def baseline_bluesky_text(row: pd.Series, con, url: str | None = None) -> str:
-    """Same tail (direction/streak, record, 10-yr extreme, sanity flags) as
-    instant_notice.bluesky_text() -- deliberately duplicated rather than
-    refactored out of that module, just built on baseline_headline()
-    instead of headline().
-    """
     history = series_history(con, row, row["new_snapshot_id"])
-    text = baseline_headline(row, history) + "."
-    url_budget = len(url) + 1 if url else 0
-
-    def try_append(extra: str) -> None:
-        nonlocal text
-        if len(text) + len(extra) <= BLUESKY_MAX_GRAPHEMES - url_budget:
-            text += extra
-
-    is_latest = len(history) > 0 and row["time_period"] == history.index[-1]
-    if len(history) > 1 and is_latest:
-        try_append(f" {direction(history)}.")
-        record_note = record(history)
-        if record_note:
-            try_append(f" {record_note}.")
-
-    if len(history) > 1:
-        recent_note = _recent_extreme_note(history, row["time_period"], row["new_value"])
-        if recent_note:
-            try_append(f" {recent_note}.")
-
-    for flag in _sanity_flags(row["indicator"], row["new_value"], history, is_latest):
-        try_append(f" ⚠ {flag}.")
-
-    if url:
-        text = f"{text} {url}"
-
-    if len(text) > BLUESKY_MAX_GRAPHEMES:
-        if url:
-            budget = BLUESKY_MAX_GRAPHEMES - len(url) - 5
-            text = text[: max(budget, 0)].rstrip() + "... " + url
-        else:
-            text = text[: BLUESKY_MAX_GRAPHEMES - 1].rstrip() + "…"
-
-    return text
+    return compose_post(baseline_headline(row, history), row, history, url, include_sanity=True)
 
 
 def baseline_feed_content(row: pd.Series, history: pd.Series) -> str:
-    """Full feed-entry body -- same shape as report.py's _value_change_block()
-    (population type, value/previous/change, trend context, recent series)
-    but headed as a baseline restatement with an explicit note explaining
-    why it exists, so nobody reading changes.xml directly mistakes this for
-    a real TurkStat/Eurostat release.
+    """Full feed-entry body: the same shape as report._value_change_block(),
+    headed as a baseline restatement with an explicit note, so nobody reading
+    changes.xml mistakes it for a real release.
 
-    Deliberately kept as a strict superset of baseline_bluesky_text()'s
-    content, not a differently-formatted rendering of a subset of it: it
-    also includes the Previous/Change lines and the 10-year-high/low note.
-
-    No "Sanity checks" section -- baseline_bluesky_text() already surfaces
-    a compact "⚠" flag via _sanity_flags() when something's actually off;
-    a wall of "[ok] within plausible range" lines for everything else is
-    noise for a public feed reader, not signal. CHANGE_REPORT.md keeps the
-    full detail; the public feed doesn't.
+    A strict superset of baseline_bluesky_text()'s content. No sanity-check
+    section: the compact warning flag already covers anything genuinely off,
+    and a wall of "[ok]" lines is noise for a public feed reader.
     """
-    value = row["new_value"]
-    indicator = row["indicator"]
-    period = row["time_period"]
+    value, indicator, period = row["new_value"], row["indicator"], row["time_period"]
     lines = [
-        f"{BASELINE_PREFIX}: {_indicator_label(indicator)}, {_area_source_label(row)}, {period}",
+        f"{BASELINE_PREFIX}: {indicator_label(indicator)}, {area_source_label(row)}, {period}",
         "",
         f"  Population       {population_type_label(row['sex'])}",
-        f"  Value            {_format_number(value, indicator)} ({period})",
+        f"  Value            {format_number(value, indicator)} ({period})",
     ]
 
     prior_period, prior_value = _prior_point(history, period)
     if prior_period is not None:
         delta = value - prior_value
         pct = f" ({delta / prior_value * 100:+.1f}%)" if prior_value else ""
-        lines.append(f"  Previous         {_format_number(prior_value, indicator)} ({prior_period})")
+        lines.append(f"  Previous         {format_number(prior_value, indicator)} ({prior_period})")
         lines.append(f"  Change           {format_number(delta, indicator, signed=True)}{pct}")
 
-    lines.append("")
-    lines.append("  Note             Not a new release -- this is the value already on")
-    lines.append("                   record in veridem's data bank, posted as part of a")
-    lines.append("                   one-time backfill so this feed has content to show")
-    lines.append("                   before the next real change occurs.")
+    lines += [
+        "",
+        "  Note             Not a new release -- this is the value already on",
+        "                   record in veridem's data bank, posted as part of a",
+        "                   one-time backfill so this feed has content to show",
+        "                   before the next real change occurs.",
+    ]
 
     if len(history) >= 1:
-        lines.append("")
-        lines.append("  Trend context")
-        lines.extend(_trend_context_lines(indicator, history))
-        recent_note = _recent_extreme_note(history, period, value)
+        lines += ["", "  Trend context"] + _trend_context_lines(indicator, history)
+        recent_note = recent_extreme_note(history, period, value)
         if recent_note:
             lines.append(f"    Recent         {recent_note}")
-        lines.append("")
-        lines.append("  Recent series")
-        lines.extend(_recent_series_lines(indicator, history, period, "current"))
+        lines += ["", "  Recent series"] + _recent_series_lines(indicator, history, period, "current")
 
     return "\n".join(lines)
 
 
 def build_queue(con, base_url: str | None = None, only_latest_year: bool = True) -> list[dict]:
-    """One baseline-notice dict per current Turkiye series, in the order
-    they'll be posted. Compatible with instant_notice.build_notices()'s
-    dict shape (title/bluesky_text/feed_content/indicator/ref_area/
-    time_period/change_class/snapshot_id) so feed.append_notices() works
-    unmodified, plus sex/age/source/posted-state fields this module needs
-    for its own identity tracking (_existing_keys()). change_class is set
-    to the literal string "BASELINE", never one of diff.py's real
-    classes, so a feed entry ID can never collide with (or be mistaken
-    for) a genuine change's ID.
+    """One baseline-notice dict per current Türkiye series, in post order.
 
-    `only_latest_year`: different indicators can be stuck at different
-    "current" years depending on each source's own publication lag (e.g.
-    TFR/ASFR lag a year behind CBR/CDR at times). Rather than posting a
-    mix of "current" years in the same batch, this drops every series not
-    yet at the bank's own most recent year -- computed live from the data,
-    not hardcoded, so a later rebuild naturally adjusts as more indicators
-    catch up.
+    Shaped to match instant_notice.build_notices() so feed.append_notices()
+    works unmodified, plus the sex/age/source/posted fields this module needs
+    for identity tracking. change_class is the literal "BASELINE", never one
+    of diff.py's real classes, so a feed entry ID can never collide with a
+    genuine change's.
 
-    Applies instant_notice.filter_posting_sources() before anything else --
-    the same public-posting eligibility gate the real-time change path
-    uses (source == 'tuik' never posts, source == 'tuik_press' only for
-    CURATED_PRESS_INDICATORS). Without this, a series added to the data
-    bank purely for archive/dashboard purposes (e.g. raw SDMX indicators
-    outside the curated set) would still surface as a public baseline
-    notice here, contradicting the rule the real-time path enforces for
-    the same series.
+    `only_latest_year` drops every series not yet at the bank's most recent
+    year, computed live rather than hardcoded: different indicators sit at
+    different "current" years depending on each source's publication lag, and
+    posting a mix of years in one batch would be confusing.
+
+    filter_posting_sources() is applied first, the same eligibility gate the
+    real-time path uses. Without it, a series added purely for archive or
+    dashboard purposes would still surface as a public baseline notice.
     """
     rows = filter_posting_sources(current_tr_rows(con))
     if only_latest_year and not rows.empty:
@@ -249,9 +165,10 @@ def build_queue(con, base_url: str | None = None, only_latest_year: bool = True)
             print(
                 f"Dropping {len(dropped)} series not yet at {latest_year} "
                 f"(stuck at {sorted(dropped['time_period'].unique())}): "
-                + ", ".join(sorted(dropped['indicator'].unique()))
+                + ", ".join(sorted(dropped["indicator"].unique()))
             )
         rows = rows[rows["time_period"] == latest_year]
+
     queue = []
     for _, row in rows.iterrows():
         history = series_history(con, row, row["new_snapshot_id"])
@@ -276,44 +193,36 @@ def build_queue(con, base_url: str | None = None, only_latest_year: bool = True)
     return queue
 
 
-# Domain grouping for the post order -- build_queue()'s own order is
-# alphabetical by indicator within source, which front-loads a long run of
-# near-identical mortality sex-breakdown posts. Not a concept the data
-# itself carries (indicator_map.csv has no domain column) -- display/
-# ordering-only, scoped to this queue, never written back to the data bank.
-_DOMAIN = {}
-for _ind in ("TFR", "ASFR", "ADOLESCENT_FERTILITY_RATE", "MEAN_AGE_CHILDBEARING", "MEAN_AGE_FIRST_BIRTH", "TOTAL_BIRTHS", "CBR"):
-    _DOMAIN[_ind] = "Fertility"
-for _ind in (
-    "CDR", "INFANT_DEATHS", "INFANT_MORTALITY_RATE", "NEONATAL_DEATHS", "NEONATAL_MORTALITY_RATE",
-    "POST_NEONATAL_DEATHS", "POST_NEONATAL_MORTALITY_RATE", "TOTAL_DEATHS", "UNDER5_DEATHS", "UNDER5_MORTALITY_RATE",
-    "HEALTHY_LIFE_YEARS",
-):
-    _DOMAIN[_ind] = "Mortality"
-for _ind in ("INTERNAL_MIGRATION_VOLUME", "INTERNAL_MIGRATION_RATE", "IMMIGRANTS", "EMIGRANTS"):
-    _DOMAIN[_ind] = "Migration"
-for _ind in ("NATURAL_GROWTH_RATE", "POP_GROWTH_RATE", "POP_JAN1", "TOTAL_POPULATION"):
-    _DOMAIN[_ind] = "Population"
-for _ind in ("MEAN_AGE_FIRST_MARRIAGE", "NUMBER_OF_MARRIAGES", "CRUDE_MARRIAGE_RATE", "NUMBER_OF_DIVORCES", "CRUDE_DIVORCE_RATE"):
-    _DOMAIN[_ind] = "Nuptiality"
+# Post-order grouping only. build_queue()'s own order is alphabetical by
+# indicator within source, which front-loads a long run of near-identical
+# mortality sex-breakdown posts. Not a concept the data carries, and never
+# written back to the data bank.
 DOMAIN_ORDER = ("Fertility", "Mortality", "Migration", "Population", "Nuptiality")
+_DOMAIN = {
+    ind: domain
+    for domain, indicators in {
+        "Fertility": ("TFR", "ASFR", "ADOLESCENT_FERTILITY_RATE", "MEAN_AGE_CHILDBEARING",
+                      "MEAN_AGE_FIRST_BIRTH", "TOTAL_BIRTHS", "CBR"),
+        "Mortality": ("CDR", "INFANT_DEATHS", "INFANT_MORTALITY_RATE", "NEONATAL_DEATHS",
+                      "NEONATAL_MORTALITY_RATE", "POST_NEONATAL_DEATHS", "POST_NEONATAL_MORTALITY_RATE",
+                      "TOTAL_DEATHS", "UNDER5_DEATHS", "UNDER5_MORTALITY_RATE", "HEALTHY_LIFE_YEARS"),
+        "Migration": ("INTERNAL_MIGRATION_VOLUME", "INTERNAL_MIGRATION_RATE", "IMMIGRANTS", "EMIGRANTS"),
+        "Population": ("NATURAL_GROWTH_RATE", "POP_GROWTH_RATE", "POP_JAN1", "TOTAL_POPULATION"),
+        "Nuptiality": ("MEAN_AGE_FIRST_MARRIAGE", "NUMBER_OF_MARRIAGES", "CRUDE_MARRIAGE_RATE",
+                       "NUMBER_OF_DIVORCES", "CRUDE_DIVORCE_RATE"),
+    }.items()
+    for ind in indicators
+}
 
 
 def interleave_by_domain(queue: list[dict], order: tuple[str, ...] = DOMAIN_ORDER) -> list[dict]:
-    """Round-robin the queue across domains -- one entry per domain per
-    round, cycling `order`, until every domain's own items are exhausted --
-    instead of posting a long same-domain (and often same-indicator, just
-    split by sex) block before moving to the next. Preserves each domain's
-    own existing relative order (build_queue()'s indicator/sex/source sort).
+    """Round-robin the queue across domains, one entry per domain per round,
+    instead of posting a long same-domain block. Preserves each domain's own
+    relative order.
 
-    Safe to run on a queue that's partly posted, not just a fresh one:
-    post_next() (post_baseline_notice.py) only ever reads
-    `[e for e in queue if not e["posted"]][0]` -- an already-posted entry's
-    position in the list doesn't affect anything, so reordering the whole
-    queue (posted entries included) can't disturb what's already gone out.
+    Safe on a partly-posted queue: post_next() only ever reads the first
+    unposted entry, so reordering cannot disturb what has already gone out.
     """
-    from collections import defaultdict, deque
-
     buckets: dict[str, deque] = defaultdict(deque)
     for entry in queue:
         buckets[_DOMAIN.get(entry["indicator"], "Other")].append(entry)
@@ -327,69 +236,35 @@ def interleave_by_domain(queue: list[dict], order: tuple[str, ...] = DOMAIN_ORDE
     return result
 
 
-def _existing_keys(queue: list[dict]) -> set[tuple]:
-    """(source, indicator, sex, age, ref_area) for every entry already in
-    a queue. `.get("age", "_T")` covers entries queued before "age" was
-    added to build_queue()'s dict -- they default to "_T", correct for
-    every one of them except ASFR (queued 2026-08-14, before this fix),
-    whose 7 age-band entries collapse to one legacy key; harmless, since
-    they're already queued once and won't be re-added regardless."""
-    return {(e["source"], e["indicator"], e["sex"], e.get("age", "_T"), e["ref_area"]) for e in queue}
+def _entry_key(entry: dict) -> tuple:
+    """Identity of one queue entry. Entries queued before `age` was added
+    default to '_T'."""
+    return (entry["source"], entry["indicator"], entry["sex"], entry.get("age", "_T"), entry["ref_area"])
 
 
 def append_new_series(
     existing_queue: list[dict], con, base_url: str | None = None, only_latest_year: bool = True
 ) -> list[dict]:
-    """Candidate baseline notices for series NOT already present in
-    existing_queue, in build_queue()'s own order/shape -- the append path
-    for folding in a newly-added source without disturbing the
-    posted/posted_at state of entries already queued. Purely additive:
-    existing_queue itself is never modified here, the caller does
-    `existing_queue + append_new_series(existing_queue, con)` and writes
-    the result back.
-
-    Runs only_latest_year over *every* current Turkiye series, existing and
-    new together (build_queue()'s own current_tr_rows() call does this
-    naturally) -- correct even when the already-queued entries and the new
-    ones are different sources at the same calendar year: different
-    `source` values never conflict, and the max-year computation doesn't
-    care which source a row came from, just its time_period.
+    """Candidate baseline notices for series not already in `existing_queue`.
+    Purely additive: the caller does `existing_queue + append_new_series(...)`
+    and writes the result back, so posted/posted_at state is never disturbed.
     """
     candidates = build_queue(con, base_url=base_url, only_latest_year=only_latest_year)
-    seen = _existing_keys(existing_queue)
-    return [c for c in candidates if (c["source"], c["indicator"], c["sex"], c["age"], c["ref_area"]) not in seen]
+    seen = {_entry_key(e) for e in existing_queue}
+    return [c for c in candidates if _entry_key(c) not in seen]
 
 
 def main() -> int:
-    """Build the queue once and write it to QUEUE_PATH. Refuses to
-    overwrite an existing queue file -- delete it deliberately first if you
-    really want to rebuild from scratch, so a stray re-run can never wipe
-    out which entries have already been posted."""
+    """Build the queue once and write it. Refuses to overwrite an existing
+    queue file: delete it deliberately first, so a stray re-run can never
+    wipe out which entries have already been posted."""
     if QUEUE_PATH.exists():
         print(f"{QUEUE_PATH} already exists -- delete it first if you really want to rebuild.")
         return 1
-    con = connect()
-    queue = build_queue(con)
+    queue = build_queue(connect())
     QUEUE_PATH.parent.mkdir(parents=True, exist_ok=True)
     QUEUE_PATH.write_text(json.dumps(queue, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"Wrote {len(queue)} baseline notice(s) to {QUEUE_PATH}")
-    return 0
-
-
-def append_main() -> int:
-    """CLI entry for the append path: read the existing queue, compute new
-    candidates via append_new_series(), print them for review, and stop --
-    does NOT write QUEUE_PATH itself. The actual append-and-save is a
-    separate, explicit step once the printed batch has been reviewed."""
-    if not QUEUE_PATH.exists():
-        print(f"{QUEUE_PATH} doesn't exist -- run `python baseline_notice.py` first.")
-        return 1
-    existing = json.loads(QUEUE_PATH.read_text(encoding="utf-8"))
-    con = connect()
-    new_entries = append_new_series(existing, con)
-    print(f"{len(existing)} entries already queued; {len(new_entries)} new candidate(s) found.\n")
-    for e in new_entries:
-        print(f"[{len(e['bluesky_text'])} graphemes] {e['bluesky_text']}\n")
     return 0
 
 

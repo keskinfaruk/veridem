@@ -1,43 +1,34 @@
 """
 Posts the next due entry from the one-time baseline-notice queue (see
 baseline_notice.py), at most one per UTC calendar day, so the feed and
-@veridemdata.bsky.social don't show many entries all on the same day --
-which would itself look like an unannounced data dump rather than either a
-real release cadence or the honest one-time seed it actually is.
+Bluesky account do not show many entries on the same day, which would look
+like an unannounced data dump rather than the honest one-time seed it is.
 
-Meant to run once a day, piggybacking on daily.yml's existing schedule --
-a no-op on days it's not yet due, and once the queue is drained. Idempotent:
-running it twice in the same window posts nothing the second time, since
-the first run already advanced the queue and updated `posted_at`.
+Runs once a day on daily.yml's schedule: a no-op on days it is not yet due,
+and once the queue is drained. Idempotent, since the first run of a day
+advances the queue and updates `posted_at`.
 
-Before checking what's due, also folds in any series newly present in the
-data bank that the queue doesn't have yet
-(baseline_notice.append_new_series()), so a newly-added indicator joins
-the queue automatically.
+Before checking what is due, folds in any series newly present in the bank
+that the queue does not have yet, so a newly-added indicator joins
+automatically.
 
-Requires the already-checked-out `webpage` repo path as its one argument,
-same convention as sync_webpage.py:
-    1. To seed this repo's local, never-committed changes.xml from the
-       *persisted* copy at webpage/veridem/changes.xml before calling
-       append_notices() -- without this, append_notices() would think no
-       entries exist yet (a fresh checkout has no local file), and a later
-       sync_webpage.py call would overwrite the real, already-public feed
-       history with just this run's single new entry.
-    2. Not used for the actual sync/push -- that's still sync_webpage.py's
-       job, called separately by daily.yml after this script updates the
-       local feed file.
+Takes the checked-out `webpage` repo path as its one argument, to seed this
+repo's never-committed changes.xml from the persisted copy at
+webpage/veridem/changes.xml before appending. Without that, append_notices()
+would see no existing entries in a fresh checkout and a later
+sync_webpage.py call would overwrite the real public feed history with just
+this run's entry. The sync itself is still sync_webpage.py's job.
 """
 
 import json
 import os
-import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 import bluesky_client
 from baseline_notice import QUEUE_PATH, append_new_series, interleave_by_domain
-from feed import FEED_PATH, append_notices
+from feed import append_notices, seed_from_published
 from schema import connect
 
 
@@ -55,21 +46,16 @@ def _save_queue(queue: list[dict]) -> None:
 
 
 def _due(queue: list[dict], now: datetime) -> bool:
-    """Due once the UTC calendar date has advanced past the last post's --
-    a date comparison rather than an exact 24h gap, so a run landing a few
-    minutes earlier than the previous day's (cron drift, a manual dispatch)
-    can't push a post out to the following day."""
+    """
+    Due once the UTC calendar date has advanced past the last post's. A date
+    comparison rather than an exact 24h gap, so a run landing a few minutes
+    earlier than the previous day's cannot push a post out to the following day.
+    """
     posted_ats = [e["posted_at"] for e in queue if e["posted_at"]]
     if not posted_ats:
         return True
     last = max(datetime.fromisoformat(ts) for ts in posted_ats)
     return now.date() > last.date()
-
-
-def _seed_local_feed(webpage_repo: Path) -> None:
-    src = webpage_repo / "veridem" / "changes.xml"
-    if src.exists():
-        shutil.copy(src, FEED_PATH)
 
 
 def _append_new_candidates(queue: list[dict]) -> tuple[list[dict], int]:
@@ -105,7 +91,7 @@ def post_next(webpage_repo: Path, now: datetime | None = None) -> tuple[bool, in
     entry = pending[0]
     print(f"Posting: {entry['title']}")
 
-    _seed_local_feed(webpage_repo)
+    seed_from_published(webpage_repo)
     append_notices([entry])
 
     handle, app_password = bluesky_client.get_credentials()

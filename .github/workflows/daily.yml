@@ -1,57 +1,39 @@
 name: Daily data refresh
 
-# Runs src/daily_run.py on a schedule: fetches every watched TUIK + Eurostat
-# + TUIK-press indicator, diffs each dataflow's fresh snapshot against its
-# previous one, and opens a PR only if a demographic indicator's value
-# substantively changed (see daily_run.py's module docstring). No change ->
-# the job just ends quietly, nothing to review.
+# Runs src/daily_run.py on a schedule: fetches every watched TurkStat +
+# Eurostat + TurkStat-press indicator, diffs each dataflow's fresh snapshot
+# against the previous one, and opens a PR only if a demographic value
+# substantively changed. No change, no PR, nothing to review.
 #
-# A catalogue-level change (TUIK's own catalogue changing shape, not a
-# demographic figure) never opens a PR -- see "Commit technical changes
-# log" below and technical_log.py.
+# A catalogue-level change (a TurkStat service changing shape, not a
+# demographic figure) never opens a PR: it goes to data/technical_changes_log.md
+# via a direct commit. See technical_log.py.
 #
-# TUIK-press fetching needs no new secret -- the press API takes no auth,
-# just an X-Requested-With header (see tuik_press_client.py) -- but does
-# need `xlrd` in requirements.txt to parse the .xls tables it returns;
-# don't drop that dependency.
+# Manual setup this workflow depends on, none of it done by any code path:
+#   - TUIK_API_KEY repository secret
+#   - BLUESKY_DATA_HANDLE / BLUESKY_DATA_APP_PASSWORD repository secrets for
+#     the instant-notice account. Until these exist, daily_run.py still
+#     updates changes.xml correctly but the Bluesky step fails with a clear
+#     "credentials not configured" error, which is why the run exits
+#     non-zero rather than silently
+#   - WEBPAGE_PAT repository secret: a fine-grained PAT with contents:write
+#     on the site repo only, to sync changes.xml + veridem/index.html there
+#   - Settings -> Actions -> General -> Workflow permissions -> "Read and
+#     write permissions", AND the separate "Allow GitHub Actions to create
+#     and approve pull requests" checkbox. Both are needed for the PR step
+#     to succeed with the default GITHUB_TOKEN
 #
-# Manual setup this workflow depends on (not done by any code path):
-#   - TUIK_API_KEY repository secret (Settings -> Secrets and variables ->
-#     Actions -> New repository secret)
-#   - BLUESKY_DATA_HANDLE / BLUESKY_DATA_APP_PASSWORD repository secrets,
-#     same place, for the instant-notice Bluesky account -- until these
-#     exist, daily_run.py still updates changes.xml correctly but the
-#     Bluesky step fails with a clear "credentials not configured" error,
-#     which is why the run exits non-zero (not silently) until they're added
-#   - Settings -> Actions -> General -> Workflow permissions ->
-#     "Read and write permissions" AND, a separate checkbox below it,
-#     "Allow GitHub Actions to create and approve pull requests" -- both
-#     needed for "Open or update PR" to succeed with the default
-#     GITHUB_TOKEN
-#   - WEBPAGE_PAT repository secret: a fine-grained GitHub PAT with
-#     contents:write on the target site repo only, used to sync
-#     changes.xml + veridem/index.html there directly (no PR)
-#
-# Also runs post_baseline_notice.py, which drains the one-time baseline-
-# notice queue (see baseline_notice.py), at most once a day, reusing the
-# same Bluesky/WEBPAGE_PAT secrets above. The webpage repo is checked out
-# unconditionally, early, so its persisted changes.xml can seed this run's
-# local copy before *either* the real change-notice path (daily_run.py) or
-# the baseline path appends to it -- without this, a fresh checkout has no
-# local changes.xml to prepend onto (it's deliberately never committed to
-# this repo's own git, see feed.py), and syncing would silently overwrite
-# the real public history with just this run's new entries.
+# The press connector needs no secret (the press API takes no auth, only an
+# X-Requested-With header) but does need `xlrd` in requirements.txt to read
+# the .xls tables it returns. Do not drop that dependency.
 
 on:
   schedule:
-    # 07:30 UTC = 10:30 Turkiye Time (TRT, fixed UTC+3 year-round -- Turkey
-    # abolished DST in 2016, so this never needs a seasonal adjustment).
-    # TUIK's own publications go out at 10:00 TRT; this is a 30-minute
-    # buffer after that, not before it -- the previous 06:00 UTC schedule
-    # ran an hour *before* TUIK's publish time and would have missed a
-    # same-day release until the next day's run.
+    # 07:30 UTC = 10:30 Türkiye Time (fixed UTC+3 year-round; Türkiye
+    # abolished DST in 2016, so this needs no seasonal adjustment). TurkStat
+    # publishes at 10:00 TRT, so this is a 30-minute buffer after it.
     - cron: "30 7 * * *"
-  workflow_dispatch: {} # manual trigger, for testing without waiting on the cron
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -62,11 +44,11 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     # Safeguard, not a normal-case budget (a real run takes a few minutes).
-    # This exists so a genuine hang (e.g. TUIK accepting a connection but
-    # never responding, which timeout= and retries don't catch) fails
-    # loudly within the hour instead of sitting "running" for GitHub's
-    # 6-hour default and never sending a failure email at all.
+    # Exists so a genuine hang, e.g. TurkStat accepting a connection but
+    # never responding, fails within the hour instead of sitting "running"
+    # for GitHub's 6-hour default and never sending a failure email.
     timeout-minutes: 20
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -79,16 +61,31 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # Checked out early and unconditionally now (used to be conditional,
-      # after the main run) so its persisted changes.xml can seed this run's
-      # local copy before anything appends to it -- see the module docstring
-      # above for why. Read-only use until the sync step below.
+      # Checked out early and unconditionally so its persisted changes.xml can
+      # seed this run's local copy before anything appends to it. Without
+      # this, a fresh checkout has no local changes.xml to prepend onto (it is
+      # deliberately never committed here, see feed.py) and the sync would
+      # overwrite the real public history with just this run's entries.
+      # Read-only until the sync step below.
       - name: Checkout webpage repo
         uses: actions/checkout@v4
         with:
           repository: keskinfaruk/webpage
           token: ${{ secrets.WEBPAGE_PAT }}
           path: webpage
+
+      # Seed this repo's working copy of the feed from the published one before
+      # anything appends to it. A fresh checkout has no local changes.xml (it is
+      # never committed here), so without this the run would prepend onto an
+      # empty feed and the sync would overwrite the real public history.
+      - name: Seed local changes feed
+        working-directory: src
+        run: |
+          python -c "
+          from pathlib import Path
+          from feed import seed_from_published
+          print('seeded' if seed_from_published(Path('../webpage')) else 'nothing to seed')
+          "
 
       - name: Run daily fetch and diff
         id: run
@@ -99,10 +96,10 @@ jobs:
           BLUESKY_DATA_APP_PASSWORD: ${{ secrets.BLUESKY_DATA_APP_PASSWORD }}
         run: python daily_run.py
 
-      # A failed step above already makes this workflow run show red in the
-      # Actions tab, and GitHub emails the repo owner about failed scheduled
-      # workflow runs by default -- that's the whole failure-notification
-      # mechanism, deliberately, rather than a second custom-built one.
+      # A failed step above already turns this run red, and GitHub emails the
+      # owner about failed scheduled runs by default. That is the whole
+      # failure-notification mechanism, deliberately, rather than a second
+      # custom-built one.
 
       - name: Open or update PR
         if: steps.run.outputs.has_changes == 'true'
@@ -116,20 +113,24 @@ jobs:
           add-paths: |
             data/raw/**
 
-      # Catalogue-level changes -- direct commit to main, no PR. Also
-      # gated on has_new_candidates so a candidate snapshot with no other
-      # catalogue change still gets committed.
+      # Catalogue-level changes: direct commit to main, no PR. Also gated on
+      # has_new_candidates so a candidate snapshot with no other catalogue
+      # change still gets committed.
       - name: Commit technical changes log
         if: steps.run.outputs.has_technical_changes == 'true' || steps.run.outputs.has_new_candidates == 'true'
         run: |
           git config user.name "veridem-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/technical_changes_log.md data/inventory
-          git commit -m "Technical changes log: catalogue update"
-          git push
+          if git diff --cached --quiet; then
+            echo "Nothing staged -- skipping commit."
+          else
+            git commit -m "Technical changes log: catalogue update"
+            git push
+          fi
 
-      # One persistent GitHub issue, commented on each time new
-      # candidates appear rather than a new issue every run.
+      # One persistent issue, commented on each time new candidates appear,
+      # rather than a new issue every run.
       - name: Open or comment on candidate-indicators issue
         if: steps.run.outputs.has_new_candidates == 'true'
         env:
@@ -157,13 +158,17 @@ jobs:
         working-directory: src
         run: python sync_webpage.py ../webpage
 
-      # Records which entry was posted and any newly-queued series --
-      # direct commit to main, no PR, bookkeeping only.
+      # Records which entry was posted and any newly-queued series. Direct
+      # commit to main, no PR, bookkeeping only.
       - name: Commit baseline queue progress
         if: steps.baseline.outputs.queue_updated == 'true'
         run: |
           git config user.name "veridem-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/baseline_notices_queue.json
-          git commit -m "Baseline notice: mark next entry posted"
-          git push
+          if git diff --cached --quiet; then
+            echo "Nothing staged -- skipping commit."
+          else
+            git commit -m "Baseline notice: mark next entry posted"
+            git push
+          fi

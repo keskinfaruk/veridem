@@ -1,62 +1,40 @@
 """
-Change report generator.
+Change report generator: turns diff.py's and inventory.py's output into
+something a demographer can act on, not "dataflow DF_DOGUM version 2.1 ->
+2.2".
 
-Turns diff.py's / dataflow_inventory.py's output into a human-readable
-report -- something a demographer can act on, not "dataflow DF_DOGUM
-version 2.1 -> 2.2". Blog-post drafting is a separate, later concern; this
-is just the report.
-
-`generate_change_report()` returns "" when there is nothing to report --
-callers should treat that as "exit quietly, no notification".
+generate_change_report() returns "" when there is nothing to report. Callers
+must treat that as "exit quietly, no notification".
 """
 
 import pandas as pd
 
 from sanity import run_checks
 
-# Optional named reference value per indicator, shown as a distance-from
-# line in the trend context when defined. Not every indicator has one.
+# Optional named reference value per indicator, shown as a distance-from line
+# in the trend context. Not every indicator has one.
 REFERENCE_VALUES = {
     "TFR": ("replacement level", 2.10),
 }
 
-# Display names for the `source` column. Shown in every block header --
-# TurkStat and Eurostat report slightly different numbers for the same
-# indicator (confirmed, e.g. CBR), so which one a figure came from is never
-# left implicit here: source is part of a series' identity. "TurkStat" (not
-# "TÜİK") in this display text specifically -- the institute's own English
-# name; the internal source id ('tuik'), module names, and file paths stay
-# unchanged, since renaming those touches the whole committed data bank for
-# no real benefit.
+# Display names for `source`, shown in every block header. TurkStat and
+# Eurostat report slightly different numbers for the same indicator
+# (confirmed, e.g. CBR), so a figure's origin is never left implicit: source
+# is part of a series' identity. "TurkStat" is the institute's own English
+# name; the internal source id ('tuik'), module names and file paths stay
+# as they are, since renaming those would touch the whole committed bank.
 SOURCE_LABELS = {"tuik": "TurkStat", "eurostat": "Eurostat", "tuik_press": "TurkStat press release"}
 
-
-def source_label(source: str) -> str:
-    return SOURCE_LABELS.get(source, source)
-
-
-# "Total"/"Men"/"Women" -- an explicit population-type line shown near
-# Value/Previous/Change in every block: the title already states this via
-# instant_notice._area_source_label()'s sex clause, but that's easy to miss
-# when skimming straight to the numbers -- worth stating twice rather than
-# leaving it implicit in body text a reader can skip past. Distinct from
-# instant_notice.SEX_LABELS ("men"/"women", lowercase, built for an inline
-# sentence fragment) -- this is a standalone field label, always shown
-# (including the plain 'Total' case) rather than omitted for the common case.
+# Shown as its own field near Value/Previous/Change. The title already states
+# this via instant_notice.area_source_label()'s sex clause, but that is easy
+# to miss when skimming to the numbers, so it is stated twice rather than
+# left implicit in body text. Always shown, including the plain 'Total' case.
 POPULATION_TYPE_LABELS = {"T": "Total", "M": "Men", "F": "Women"}
 
-
-def population_type_label(sex: str) -> str:
-    return POPULATION_TYPE_LABELS.get(sex, sex)
-
-
-# Natural display names -- used by report.py's own block headers (see
-# `public` param on _value_change_block() etc. below) and re-imported by
-# instant_notice.py under the same names. indicator_map.csv's own codes
-# (TFR, CBR, ...) are still the right thing to grep for internally, which
-# is why CHANGE_REPORT.md (public=False, the default) keeps raw codes --
-# only the public single-notice feed_content instant_notice.build_notices()
-# builds passes public=True.
+# Natural display names, used by this module's block headers and by
+# instant_notice.py. indicator_map.csv's own codes stay the right thing to
+# grep for internally, which is why CHANGE_REPORT.md (public=False) keeps
+# raw codes; only the public feed passes public=True.
 INDICATOR_LABELS = {
     "TFR": "Total Fertility Rate (TFR)",
     "ASFR": "Age-Specific Fertility Rate (ASFR)",
@@ -96,22 +74,9 @@ INDICATOR_LABELS = {
 
 REF_AREA_LABELS = {"TR": "Türkiye"}
 
-
-def indicator_label(indicator: str) -> str:
-    return INDICATOR_LABELS.get(indicator, indicator)
-
-
-def area_label(ref_area: str) -> str:
-    return REF_AREA_LABELS.get(ref_area, ref_area)
-
-
-# Decimal places per indicator -- lets _value_change_block() (CHANGE_REPORT.md,
-# and every feed_content built through generate_change_report()) format
-# Value/Previous/Change/Recent-series/trend-average consistently instead of
-# pandas' raw `:g`/`.2f` (which produces "8.53724e+07"-style scientific
-# notation for population counts, and "9.20" instead of "9.2" for indicators
-# like ADOLESCENT_FERTILITY_RATE that are only meaningfully precise to 1
-# decimal). instant_notice.py imports this rather than defining its own copy.
+# Decimal places per indicator, so format_number() stays consistent instead
+# of pandas' raw formatting (which yields "8.53724e+07" for population counts
+# and "9.20" where only 1 decimal is meaningful).
 INDICATOR_DECIMALS = {
     "TFR": 2,
     "ASFR": 1,
@@ -149,56 +114,13 @@ INDICATOR_DECIMALS = {
     "HEALTHY_LIFE_YEARS": 1,
 }
 
-
-def format_number(value: float, indicator: str, signed: bool = False) -> str:
-    """The one place a raw obs_value becomes display text, for every block
-    in this module and in instant_notice.py/baseline_notice.py -- Value,
-    Previous, Change, 5-yr average, and every line of Recent series all go
-    through this now, not a mix of `:g`/`.2f`/bare pandas formatting.
-    `signed` forces a leading +/- (the Change line; direction is otherwise
-    implicit in the sign of the number, but a bare "-0.60" reads faster
-    with the sign than without).
-    """
-    decimals = INDICATOR_DECIMALS.get(indicator)
-    if decimals is None:
-        return f"{value:+g}" if signed else f"{value:g}"
-    return f"{value:+,.{decimals}f}" if signed else f"{value:,.{decimals}f}"
-
-
-def _prior_point(history: pd.Series, current_period: str) -> tuple[str | None, float | None]:
-    """(period, value) of the point immediately before current_period in the
-    real historical series. Not assumed to be current_period - 1 (a series
-    can have gaps, e.g. Eurostat's TFR skips 2020-2021 for Turkiye) and NOT
-    assumed to be the series' last entry: a REVISED or backfilled
-    NEW_PERIOD can land on a period that isn't the newest one in the
-    fetched history.
-
-    This is what makes _value_change_block() below correct for the common
-    NEW_PERIOD case: a genuine NEW_PERIOD row's `old_value` (the diff row's
-    own old/new pair) is legitimately NaN -- no period existed before to
-    compare against on that axis -- so Previous/Change must come from the
-    series' own history, not the diff row.
-    """
-    if current_period not in history.index:
-        return None, None
-    pos = history.index.get_loc(current_period)
-    if pos == 0:
-        return None, None
-    return history.index[pos - 1], history.iloc[pos - 1]
-
-
 RECENT_SERIES_LENGTH = 5
 TREND_AVERAGE_WINDOW = 5
 
-# Report priority order, most newsworthy first: a fresh period is the main
-# event, structural/DSD changes are lowest priority (parser risk, not
-# necessarily new data).
-#
-# Split by audience: OBS_CLASS_ORDER is demographic data, rendered into
-# CHANGE_REPORT.md/the PR. TECHNICAL_CLASS_ORDER (catalogue-level, TUIK's
-# SDMX dataflow catalogue) and PRESS_TECHNICAL_CLASS_ORDER (catalogue-level,
-# tuik_press's theme catalogue -- see press_dataflow_inventory.py) never go
-# into a PR -- see technical_log.py. CLASS_HEADINGS is shared by all three.
+# Report priority, most newsworthy first. Split by audience: OBS_CLASS_ORDER
+# is demographic data, rendered into CHANGE_REPORT.md and the PR. The two
+# technical orders are catalogue-level and never reach a PR (see
+# technical_log.py). CLASS_HEADINGS is shared by all three.
 OBS_CLASS_ORDER = ["NEW_PERIOD", "REVISED", "WITHDRAWN", "NEW_SERIES"]
 TECHNICAL_CLASS_ORDER = ["NEW_DATAFLOW", "DATAFLOW_WITHDRAWN", "STRUCTURAL"]
 PRESS_TECHNICAL_CLASS_ORDER = ["PRESS_THEME_NEW", "PRESS_THEME_WITHDRAWN"]
@@ -215,22 +137,63 @@ CLASS_HEADINGS = {
 }
 
 
+def source_label(source: str) -> str:
+    return SOURCE_LABELS.get(source, source)
+
+
+def population_type_label(sex: str) -> str:
+    return POPULATION_TYPE_LABELS.get(sex, sex)
+
+
+def indicator_label(indicator: str) -> str:
+    return INDICATOR_LABELS.get(indicator, indicator)
+
+
+def area_label(ref_area: str) -> str:
+    return REF_AREA_LABELS.get(ref_area, ref_area)
+
+
+def format_number(value: float, indicator: str, signed: bool = False) -> str:
+    """The single place a raw obs_value becomes display text, for this module
+    and for instant_notice.py / baseline_notice.py. `signed` forces a leading
+    +/- for the Change line, which reads faster with the sign than without."""
+    decimals = INDICATOR_DECIMALS.get(indicator)
+    if decimals is None:
+        return f"{value:+g}" if signed else f"{value:g}"
+    return f"{value:+,.{decimals}f}" if signed else f"{value:,.{decimals}f}"
+
+
 def _ordinal(n: int) -> str:
-    if 10 <= n % 100 <= 20:
-        suffix = "th"
-    else:
-        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
     return f"{n}{suffix}"
 
 
-def series_history(con, row: pd.Series, snapshot_id: str) -> pd.Series:
-    """Full time series for one series key, as fetched in `snapshot_id`.
+def _prior_point(history: pd.Series, current_period: str) -> tuple[str | None, float | None]:
+    """(period, value) of the point immediately before current_period in the
+    real series.
 
-    Assumes the fetcher pulled full history in that run, not just an
-    incremental slice -- true of every connector built so far
-    (fetch_tuik_indicators.py / fetch_eurostat_indicators.py both backfill
-    the whole series every run) -- so this already contains every period up
-    to and including the new one, not just what changed.
+    Not assumed to be current_period - 1 (a series can have gaps: Eurostat's
+    TFR skips 2020-2021 for Türkiye) and not assumed to be the series' last
+    entry (a revision or backfilled period can land anywhere).
+
+    This is what makes _value_change_block() correct for NEW_PERIOD: that
+    row's own old_value is legitimately NaN, since no period existed before
+    to compare against, so Previous/Change must come from the series history.
+    """
+    if current_period not in history.index:
+        return None, None
+    pos = history.index.get_loc(current_period)
+    if pos == 0:
+        return None, None
+    return history.index[pos - 1], history.iloc[pos - 1]
+
+
+def series_history(con, row: pd.Series, snapshot_id: str) -> pd.Series:
+    """Full time series for one series key as fetched in `snapshot_id`.
+
+    Assumes the fetcher pulled full history in that run rather than an
+    incremental slice, which is true of every connector built so far, so this
+    already contains every period up to and including the new one.
     """
     df = con.execute(
         "SELECT time_period, obs_value FROM observations "
@@ -246,12 +209,9 @@ def series_history(con, row: pd.Series, snapshot_id: str) -> pd.Series:
 
 
 def trend_streak(history: pd.Series) -> tuple[int, int]:
-    """(sign, streak) of the latest run of same-direction year-on-year
-    moves: sign is -1/0/1, streak is how many consecutive periods (including
-    the latest) moved that same way. Shared by direction() and any other
-    language's rendering of the same fact -- the streak count itself must
-    never differ between them, only the words wrapped around it.
-    """
+    """(sign, streak) of the latest run of same-direction year-on-year moves.
+    sign is -1/0/1; streak counts consecutive periods moving that way,
+    including the latest."""
     deltas = history.diff().dropna()
     if deltas.empty:
         return 0, 0
@@ -260,11 +220,9 @@ def trend_streak(history: pd.Series) -> tuple[int, int]:
         return 0, 1
     streak = 0
     for d in reversed(deltas.tolist()):
-        s = 1 if d > 0 else (-1 if d < 0 else 0)
-        if s == sign:
-            streak += 1
-        else:
+        if (1 if d > 0 else (-1 if d < 0 else 0)) != sign:
             break
+        streak += 1
     return sign, streak
 
 
@@ -276,21 +234,20 @@ def direction(history: pd.Series) -> str:
         return "Flat vs previous period"
     word = "increase" if sign > 0 else "decline"
     label = "Up" if sign > 0 else "Down"
-    # Threshold is 3, not 2: two data points moving the same way is easily
-    # coincidence for a genuinely noisy series (life expectancy is the clear
-    # case -- a single-year rebound would otherwise read as "2nd consecutive
-    # annual increase", overstating what two points actually support).
+    # Threshold is 3, not 2: two points moving the same way is easily
+    # coincidence for a noisy series. Life expectancy is the clear case,
+    # where a single-year rebound would otherwise read as "2nd consecutive
+    # annual increase" and overstate what two points support.
     if streak > 2:
         return f"{label} -- {_ordinal(streak)} consecutive annual {word}"
     return f"{label} vs previous period"
 
 
 def record(history: pd.Series) -> str | None:
-    """None, or a note that history's last entry is the highest/lowest value
-    the series has ever recorded. Like direction(), this reads off the
-    series' *last* entry as "the current one" -- correct whenever the
-    reported period is genuinely the newest on file, which callers outside
-    this module should verify before trusting it for anything else."""
+    """None, or a note that history's last entry is the series' highest or
+    lowest ever. Reads the last entry as "the current one", correct whenever
+    the reported period is genuinely the newest on file; callers outside this
+    module should verify that before relying on it."""
     latest = history.iloc[-1]
     span = f"since {history.index.min()}"
     if (history == history.max()).sum() == 1 and latest == history.max():
@@ -317,53 +274,45 @@ def _trend_context_lines(indicator: str, history: pd.Series) -> list[str]:
     return lines
 
 
-def _recent_series_lines(indicator: str, history: pd.Series, marker_period: str, marker_label: str) -> list[str]:
-    """Plain-text mini table of the last RECENT_SERIES_LENGTH periods.
-    Values are right-justified to a common width so the decimal points
-    line up in a monospace rendering -- every value in one of these blocks
-    shares the same indicator, so the same fixed decimal count from
-    format_number() means right-justifying is enough; no separate
-    decimal-alignment logic needed."""
+def _recent_series_lines(
+    indicator: str, history: pd.Series, marker_period: str, marker_label: str
+) -> list[str]:
+    """Plain-text mini table of the last RECENT_SERIES_LENGTH periods. Values
+    are right-justified to a common width so decimal points line up in a
+    monospace rendering; every value in a block shares one indicator, so the
+    fixed decimal count makes right-justifying sufficient."""
     recent = history.tail(RECENT_SERIES_LENGTH)
     formatted = {period: format_number(value, indicator) for period, value in recent.items()}
     width = max(len(s) for s in formatted.values())
-    lines = []
-    for period, value in recent.items():
-        arrow = f"   <- {marker_label}" if period == marker_period else ""
-        lines.append(f"    {period}  {formatted[period].rjust(width)}{arrow}")
-    return lines
+    return [
+        f"    {period}  {formatted[period].rjust(width)}"
+        + (f"   <- {marker_label}" if period == marker_period else "")
+        for period in recent.index
+    ]
 
 
 def _sanity_lines(indicator: str, value: float, history: pd.Series) -> list[str]:
-    lines = []
-    for status, message in run_checks(indicator, value, history):
-        tag = "ok" if status == "ok" else "warn"
-        lines.append(f"    [{tag}]".ljust(12) + message)
-    return lines
+    return [
+        f"    [{'ok' if status == 'ok' else 'warn'}]".ljust(12) + message
+        for status, message in run_checks(indicator, value, history)
+    ]
 
 
 def _value_change_block(
     row: pd.Series, header_verb: str, con, include_sanity: bool = True, public: bool = False
 ) -> str:
-    """Shared body for NEW_PERIOD and REVISED entries: population type,
-    value/previous/change header, trend context, recent series, optionally
-    sanity checks.
+    """Shared body for NEW_PERIOD and REVISED entries.
 
-    Two distinct comparisons get shown where they apply:
+    Two distinct comparisons appear where they apply:
 
-        - "Revised from X" -- REVISED only, same time_period, straight off
-          the diff row's own old_value/new_value pair.
-        - "Previous ... (year)" / "Change" -- the prior calendar year's
-          value from the series' own history (_prior_point()), which is
-          what actually answers "how does this compare to last time" for
-          the common NEW_PERIOD case. The diff row's old_value is NaN for a
-          genuine NEW_PERIOD (no such period existed before), which is
-          exactly why this couldn't come from the diff row alone.
+        "Revised from X"        REVISED only, same period, straight off the
+                                diff row's own old/new pair.
+        "Previous" / "Change"   the prior period's value from the series'
+                                own history, which is what answers "how does
+                                this compare to last time" for NEW_PERIOD.
     """
     history = series_history(con, row, row["new_snapshot_id"])
-    value = row["new_value"]
-    indicator = row["indicator"]
-    period = row["time_period"]
+    value, indicator, period = row["new_value"], row["indicator"], row["time_period"]
     header_indicator = indicator_label(indicator) if public else indicator
     header_area = area_label(row["ref_area"]) if public else row["ref_area"]
 
@@ -386,16 +335,15 @@ def _value_change_block(
     lines.append("")
 
     if len(history) >= 1:
-        lines.append("  Trend context")
-        lines.extend(_trend_context_lines(indicator, history))
-        lines.append("")
-        lines.append("  Recent series")
-        lines.extend(_recent_series_lines(indicator, history, period, "new" if header_verb == "NEW" else "revised"))
+        lines += ["  Trend context"] + _trend_context_lines(indicator, history)
+        lines += ["", "  Recent series"]
+        lines += _recent_series_lines(
+            indicator, history, period, "new" if header_verb == "NEW" else "revised"
+        )
 
     if include_sanity:
-        lines.append("")
-        lines.append("  Sanity checks")
-        lines.extend(_sanity_lines(indicator, value, history if len(history) else pd.Series([value])))
+        lines += ["", "  Sanity checks"]
+        lines += _sanity_lines(indicator, value, history if len(history) else pd.Series([value]))
 
     return "\n".join(lines)
 
@@ -425,11 +373,15 @@ def _new_series_block(row: pd.Series, con, include_sanity: bool = True, public: 
         f"  First observed value   {format_number(row['new_value'], indicator)} ({row['time_period']})",
     ]
     if len(history) > 1:
-        lines.append(f"  History fetched        {history.index.min()}-{history.index.max()} ({len(history)} periods)")
+        lines.append(
+            f"  History fetched        {history.index.min()}-{history.index.max()} "
+            f"({len(history)} periods)"
+        )
     if include_sanity:
-        lines.append("")
-        lines.append("  Sanity checks")
-        lines.extend(_sanity_lines(indicator, row["new_value"], history if len(history) else pd.Series([row["new_value"]])))
+        lines += ["", "  Sanity checks"]
+        lines += _sanity_lines(
+            indicator, row["new_value"], history if len(history) else pd.Series([row["new_value"]])
+        )
     return "\n".join(lines)
 
 
@@ -471,54 +423,40 @@ def generate_change_report(
     include_sanity: bool = True,
     public: bool = False,
 ) -> str:
-    """Build the full text change report from a diff_observations()-shaped
-    DataFrame -- demographic data changes only. Returns "" if there is
-    nothing to report at all -- treat that as "no notification", never send
-    an empty report anywhere.
+    """Build the full text report from a diff_observations()-shaped frame:
+    demographic changes only. Returns "" when there is nothing to report;
+    treat that as "no notification" and never send an empty report anywhere.
 
-    Catalogue-level changes (NEW_DATAFLOW/DATAFLOW_WITHDRAWN/STRUCTURAL)
-    never come through here -- see technical_log.py, which renders those
-    into a private, directly-committed log instead (reuses
-    _inventory_block() below).
+    Catalogue-level changes never come through here. technical_log.py renders
+    those into a private, directly-committed log, reusing _inventory_block().
 
-    `include_sanity`: CHANGE_REPORT.md (the PR document actually reviewed
-    before merging) keeps the [ok]/[warn] sanity-check lines by default --
-    that's exactly the audience that check machinery is meant to serve.
-    instant_notice.build_notices() passes False when building a single
-    row's feed_content for the *public* Atom feed -- readers there get the
-    compact "⚠" flag already folded into bluesky_text()/headline() when
-    something's actually off; a wall of "[ok] within plausible range"
-    lines for everything else is noise, not signal, for that audience.
+    `include_sanity`: CHANGE_REPORT.md, the document actually reviewed before
+    merging, keeps the [ok]/[warn] lines, since that is the audience the
+    checks serve. The public feed passes False: readers there already get a
+    compact warning folded into the Bluesky text, and a wall of "[ok]" lines
+    is noise for them.
 
-    `public`: same reasoning, applied to the block headers.
-    CHANGE_REPORT.md (public=False, the default) keeps raw indicator/
-    ref_area codes -- deliberately, they're what you'd grep for.
-    instant_notice.build_notices() passes True so the public feed's header
-    reads "Adolescent Fertility Rate, Türkiye" instead of
-    "ADOLESCENT_FERTILITY_RATE, TR", matching what baseline notices, the
-    Atom entry title, and the Bluesky text already show.
+    `public`: same reasoning for block headers. CHANGE_REPORT.md keeps raw
+    indicator and ref_area codes, which are what you would grep for. The
+    public feed passes True so a header reads "Adolescent Fertility Rate,
+    Türkiye" rather than "ADOLESCENT_FERTILITY_RATE, TR".
     """
     if obs_changes.empty:
         return ""
+
+    renderers = {
+        "NEW_PERIOD": lambda r: _value_change_block(r, "NEW", con, include_sanity, public),
+        "REVISED": lambda r: _value_change_block(r, "REVISED", con, include_sanity, public),
+        "WITHDRAWN": lambda r: _withdrawn_block(r, public),
+        "NEW_SERIES": lambda r: _new_series_block(r, con, include_sanity, public),
+    }
 
     sections = []
     for change_class in OBS_CLASS_ORDER:
         rows = obs_changes[obs_changes["change_class"] == change_class]
         if rows.empty:
             continue
-
-        blocks = []
-        for _, row in rows.iterrows():
-            if change_class == "NEW_PERIOD":
-                blocks.append(_value_change_block(row, "NEW", con, include_sanity, public))
-            elif change_class == "REVISED":
-                blocks.append(_value_change_block(row, "REVISED", con, include_sanity, public))
-            elif change_class == "WITHDRAWN":
-                blocks.append(_withdrawn_block(row, public))
-            elif change_class == "NEW_SERIES":
-                blocks.append(_new_series_block(row, con, include_sanity, public))
-
-        heading = f"## {CLASS_HEADINGS[change_class]} ({len(rows)})"
-        sections.append(heading + "\n\n" + "\n\n".join(blocks))
+        blocks = [renderers[change_class](row) for _, row in rows.iterrows()]
+        sections.append(f"## {CLASS_HEADINGS[change_class]} ({len(rows)})\n\n" + "\n\n".join(blocks))
 
     return "\n\n".join(sections) + "\n"

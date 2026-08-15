@@ -1,16 +1,15 @@
 """
-Atom feed of instant Turkiye change notices. Separate from the blog's own
-feed.xml in the `webpage` repo -- this one is generated fact notices, not
-hand-written posts, but uses the same incremental idiom: new entries go in
-at the top, existing ones stay, oldest roll off past MAX_ENTRIES. Full
-history isn't lost either way -- git preserves it regardless -- this is
-just a rolling window for subscribers.
+Atom feed of instant Türkiye change notices, separate from the blog's own
+feed.xml in the `webpage` repo: these are generated fact notices, not
+hand-written posts. New entries go in at the top, existing ones stay, oldest
+roll off past MAX_ENTRIES. Nothing is lost, since git preserves the full
+history; this is just a rolling window for subscribers.
 
-FEED_PATH is this repo's own working copy. FEED_URL / SITE_URL point at
-where the feed is actually publicly reachable (faruk.page/veridem/),
-synced there from this file by the daily workflow.
+FEED_PATH is this repo's working copy. FEED_URL / SITE_URL point at where
+the feed is publicly reachable, synced there by the daily workflow.
 """
 
+import shutil
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
@@ -33,12 +32,10 @@ def _now_iso() -> str:
 
 
 def _entry_id(notice: dict) -> str:
-    """A stable, globally-unique, non-dereferencing identifier -- the
-    standard `tag:` URI scheme (RFC 4151), used because there's no real
-    per-entry permalink to point at yet. Built from the notice's own
-    snapshot_id (not a shared one for the whole batch) -- a single
-    daily_run.py invocation can carry notices from several different
-    dataflows, each with its own snapshot_id."""
+    """A stable, globally-unique, non-dereferencing identifier: the `tag:`
+    URI scheme (RFC 4151), used because no per-entry permalink exists yet.
+    Built from the notice's own snapshot_id rather than a batch-wide one,
+    since one run can carry notices from several dataflows."""
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     slug = (
         f"{notice['indicator']}-{notice['ref_area']}-{notice['time_period']}-"
@@ -55,13 +52,10 @@ def _load_existing_entries(path: Path) -> list[ET.Element]:
 
 
 def _build_entry(notice: dict) -> ET.Element:
-    """<title> is the short headline (Atom convention -- a feed reader's
-    inbox/list view shows this). <summary> is the same bluesky_text every
-    real Bluesky post carries, so the synced webpage list shows the same
-    level of detail as the Bluesky post rather than just the bare headline.
-    <content> carries the full ASCII report block, for a feed reader that
-    wants the richer trend-context/recent-series detail.
-    """
+    """<title> is the short headline, which is what a reader's list view
+    shows. <summary> is the same bluesky_text the Bluesky post carries, so
+    the synced webpage list matches that level of detail. <content> carries
+    the full report block for readers that want trend context."""
     entry = ET.Element(_tag("entry"))
     ET.SubElement(entry, _tag("title")).text = notice["title"]
     ET.SubElement(entry, _tag("id")).text = _entry_id(notice)
@@ -76,11 +70,9 @@ def _build_entry(notice: dict) -> ET.Element:
 
 
 def append_notices(notices: list[dict], path: Path | None = None) -> Path:
-    """Prepend `notices` as new Atom entries, newest first, keeping at most
-    MAX_ENTRIES total. Callers should only call this when `notices` is
-    non-empty -- it always rewrites the file, so an empty list would just
-    bump `updated` for no reason.
-    """
+    """Prepend `notices` as new entries, newest first, keeping at most
+    MAX_ENTRIES. Only call with a non-empty list: this always rewrites the
+    file, so an empty list would bump `updated` for no reason."""
     path = path or FEED_PATH
     existing = _load_existing_entries(path)
     new_entries = [_build_entry(n) for n in notices]
@@ -108,3 +100,23 @@ def append_notices(notices: list[dict], path: Path | None = None) -> Path:
     ET.indent(tree, space="  ")
     tree.write(path, encoding="UTF-8", xml_declaration=True)
     return path
+
+
+def seed_from_published(webpage_repo: Path, path: Path | None = None) -> bool:
+    """Copy the published feed into this repo's working copy, so append_notices()
+    prepends onto the real history instead of starting from nothing.
+
+    A fresh CI checkout has no local changes.xml (it is deliberately never
+    committed here), so without this the next sync would overwrite the public
+    history. Refuses to overwrite an existing local file: whoever seeded it
+    first in this run already pulled the published history in, and clobbering
+    it would drop notices written since.
+    """
+    path = path or FEED_PATH
+    if path.exists():
+        return False
+    src = webpage_repo / "veridem" / "changes.xml"
+    if not src.exists():
+        return False
+    shutil.copy(src, path)
+    return True

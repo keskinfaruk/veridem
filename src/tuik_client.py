@@ -1,42 +1,26 @@
 """
-Shared client for TUIK's SDMX 2.1 Web Service.
+Client for TÜİK's SDMX 2.1 Web Service.
 
-Auth flow per TUIK SDMX Web Service Documentation section 4.3.1:
-
-    POST https://giris.tuik.gov.tr/realms/web/protocol/openid-connect/token
-    Content-Type: application/x-www-form-urlencoded
-    grant_type=password
-    client_id=nsi-ws-consumer
-    api_key={API_KEY}
-
-The returned access_token is used as a Bearer token against
-https://nsiws.tuik.gov.tr/rest/...
+Auth per the SDMX Web Service Documentation section 4.3.1: POST the API key
+to the Keycloak token endpoint with grant_type=password and
+client_id=nsi-ws-consumer, then send the returned access_token as a Bearer
+token against https://nsiws.tuik.gov.tr/rest.
+Also builds SDMX series keys from a dataflow's live DSD. Never hardcode a
+key template: TÜİK dataflows share DSDs across many datasets, dimension
+order varies by DSD, and a version bump silently breaks a fixed key.
 """
 
 import os
-import time
+import xml.etree.ElementTree as ET
+from urllib.parse import urlencode
 
 import requests
 from dotenv import load_dotenv
 
+from net import with_retries
+
 TOKEN_URL = "https://giris.tuik.gov.tr/realms/web/protocol/openid-connect/token"
 BASE_URL = "https://nsiws.tuik.gov.tr/rest"
-
-# TUIK's NSI instance is prone to transient read timeouts under load, even
-# when the service is otherwise healthy. Retry those -- and only those,
-# never an HTTP error status -- with a short backoff before giving up.
-MAX_RETRIES = 3
-RETRY_BACKOFF_SECONDS = 5
-
-
-def _with_retries(fn, *args, **kwargs):
-    for attempt in range(1, MAX_RETRIES + 1):
-        try:
-            return fn(*args, **kwargs)
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            if attempt == MAX_RETRIES:
-                raise
-            time.sleep(RETRY_BACKOFF_SECONDS * attempt)
 
 # SDMX-ML 2.1 namespaces, used throughout for parsing structure/data responses.
 NS = {
@@ -48,7 +32,8 @@ NS = {
 
 
 def get_access_token(api_key: str | None = None) -> str:
-    """Fetch a fresh Keycloak access token. Tokens expire (~1hr) — never cache to disk."""
+    """Fetch a fresh Keycloak access token. Tokens expire after ~1 hour, so
+    never cache one to disk."""
     load_dotenv()
     api_key = api_key or os.environ.get("TUIK_API_KEY")
     if not api_key:
@@ -57,15 +42,11 @@ def get_access_token(api_key: str | None = None) -> str:
             "(CI: set it as a repository secret)"
         )
 
-    resp = _with_retries(
+    resp = with_retries(
         requests.post,
         TOKEN_URL,
         headers={"Content-Type": "application/x-www-form-urlencoded"},
-        data={
-            "grant_type": "password",
-            "client_id": "nsi-ws-consumer",
-            "api_key": api_key,
-        },
+        data={"grant_type": "password", "client_id": "nsi-ws-consumer", "api_key": api_key},
         timeout=30,
     )
     resp.raise_for_status()
@@ -76,14 +57,11 @@ def get_access_token(api_key: str | None = None) -> str:
 
 
 def get(path: str, token: str, params: dict | None = None, **kwargs) -> requests.Response:
-    """Authenticated GET against the TUIK SDMX REST base URL.
-
-    `path` is relative to BASE_URL, e.g. "dataflow/TR/all/latest".
-    """
-    url = f"{BASE_URL}/{path.lstrip('/')}"
-    resp = _with_retries(
+    """Authenticated GET against BASE_URL. `path` is relative, e.g.
+    "dataflow/TR/all/latest"."""
+    resp = with_retries(
         requests.get,
-        url,
+        f"{BASE_URL}/{path.lstrip('/')}",
         headers={"Authorization": f"Bearer {token}"},
         params=params,
         timeout=kwargs.pop("timeout", 60),
@@ -103,29 +81,43 @@ def fetch_data(
 ) -> requests.Response:
     """Fetch observations for a series key.
 
-    Series keys with many empty (unfiltered) trailing dimensions produce runs
-    of consecutive dots (e.g. "TR.A.NG_TDH..............."). IIS's request
-    filtering treats ".." anywhere in a URL path as a directory-traversal
-    attempt and rejects it with a bare 404 — before the request ever reaches
-    the SDMX application, so the server-side error format never shows up.
-
-    Percent-encoding the dots (%2E) avoids the raw ".." pattern, but `requests`
-    normally re-decodes %2E back to a literal "." before sending, because "."
-    is an RFC 3986 unreserved character — so the trap reappears silently.
-    We build a fully prepared request and overwrite `.url` after preparation
-    to stop that re-normalization from undoing the encoding.
+    Keys with many unfiltered trailing dimensions contain runs of
+    consecutive dots ("TR.A.NG_TDH..............."). IIS rejects any URL path
+    containing ".." as directory traversal, with a bare 404 raised before the
+    request reaches the SDMX application. Percent-encoding the dots avoids
+    that, but `requests` re-decodes %2E during preparation because "." is an
+    RFC 3986 unreserved character, so the URL is overwritten after
+    preparation to keep the encoding intact.
     """
-    encoded_key = series_key.replace(".", "%2E")
-    url = f"{BASE_URL}/data/{agency},{dataflow_id},{version}/{encoded_key}"
+    url = f"{BASE_URL}/data/{agency},{dataflow_id},{version}/{series_key.replace('.', '%2E')}"
     if params:
-        from urllib.parse import urlencode
-
         url = f"{url}?{urlencode(params)}"
 
-    session = requests.Session()
-    req = requests.Request("GET", url, headers={"Authorization": f"Bearer {token}"})
-    prepared = req.prepare()
+    prepared = requests.Request("GET", url, headers={"Authorization": f"Bearer {token}"}).prepare()
     prepared.url = url  # stop requests from undoing the %2E encoding
-    resp = _with_retries(session.send, prepared, timeout=60)
+    resp = with_retries(requests.Session().send, prepared, timeout=60)
     resp.raise_for_status()
     return resp
+
+
+def get_dimension_order(agency: str, dataflow_id: str, version: str, token: str) -> list[str]:
+    """A dataflow's non-time dimension IDs, in series-key order. The key is
+    positional and excludes the TimeDimension: time is filtered separately
+    via startPeriod/endPeriod query parameters."""
+    resp = get(f"dataflow/{agency}/{dataflow_id}/{version}", token, params={"references": "children"})
+    dims = ET.fromstring(resp.content).findall(
+        ".//str:DataStructure/.//str:DimensionList/str:Dimension", NS
+    )
+    dims.sort(key=lambda d: int(d.get("position")))
+    return [d.get("id") for d in dims]
+
+
+def build_series_key(dim_order: list[str], filters: dict[str, str]) -> str:
+    """Build a dot-separated positional series key. Dimensions absent from
+    `filters` are left as an empty segment (unfiltered), per the SDMX REST
+    spec. Raises if `filters` names a dimension the DSD does not have, which
+    means the DSD changed shape."""
+    unknown = set(filters) - set(dim_order)
+    if unknown:
+        raise ValueError(f"filters reference dimensions not in this DSD: {unknown}")
+    return ".".join(filters.get(dim, "") for dim in dim_order)

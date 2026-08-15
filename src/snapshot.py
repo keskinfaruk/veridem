@@ -24,10 +24,9 @@ def new_snapshot_id(source: str) -> str:
 
 
 def dumps_other_dims(d: dict) -> str:
-    """other_dims is stored as a JSON string, not a parquet struct, so that
-    files from dataflows with different extra dimensions can be read back
-    together with DuckDB's union_by_name (a struct column's fields would
-    otherwise have to match exactly across every file)."""
+    """other_dims is a JSON string rather than a parquet struct so files from
+    dataflows with different extra dimensions can be read back together with
+    union_by_name; a struct column's fields would have to match exactly."""
     return json.dumps(d, ensure_ascii=False, sort_keys=True)
 
 
@@ -38,13 +37,9 @@ def write_snapshot(
     snapshot_id: str | None = None,
     raw_dir: Path | None = None,
 ) -> Path:
-    """Write `df` (already normalized to the observations schema) as one
-    immutable raw snapshot file.
-
-    Raises if the target file already exists -- snapshots are append-only
-    and never silently overwritten -- and if `df` is missing any required
-    observations column.
-    """
+    """Write `df`, already normalized to the observations schema, as one
+    immutable snapshot file. Raises if the target exists (snapshots are
+    append-only) or if `df` is missing a required column."""
     missing = set(OBSERVATIONS_SCHEMA) - set(df.columns)
     if missing:
         raise ValueError(f"DataFrame missing required observations columns: {missing}")

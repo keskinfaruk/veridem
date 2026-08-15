@@ -1,20 +1,17 @@
 """
 Generic, indicator_map-driven Eurostat fetch pipeline.
 
-Every row's dataflow has its own dimension shape -- DEMO_GIND/DEMO_FIND key
-their indicators through `indic_de`; DEMO_MLEXPEC has no `indic_de`
-dimension at all and keys life expectancy through `age` itself, since that
-dataflow *is* "life expectancy by age and sex" -- but the batching and
-parsing logic below is shared across all of them: group indicator_map rows
-by dataflow_id, batch every row's code into one `+`-joined request, parse
-generically.
+Each dataflow has its own dimension shape (DEMO_GIND/DEMO_FIND key their
+indicators through `indic_de`; DEMO_MLEXPEC has no such dimension and keys
+life expectancy through `age`, since that dataflow *is* life expectancy by
+age and sex), but the batching and parsing below are shared: group rows by
+dataflow_id, batch every code into one '+'-joined request, parse generically.
 
-`geo` is deliberately left unfiltered on every request: per-country data for
-every geo Eurostat publishes for that dataflow, plus its own aggregates
-(EU27_2020, EA20, EFTA, ...). Eurostat's demography datasets cover Europe
-plus a handful of immediate neighbours only -- confirmed empirically (60
-distinct geo codes on DEMO_GIND), no worldwide or "WORLD" aggregate exists
-here. A true global comparison needs a separate connector (e.g. UN WPP).
+`geo` is deliberately left unfiltered, giving every geo Eurostat publishes
+for that dataflow plus its own aggregates. Eurostat's demography datasets
+cover Europe and a few immediate neighbours only (60 distinct geo codes on
+DEMO_GIND); there is no worldwide aggregate. A global comparison needs a
+separate connector.
 """
 
 from datetime import datetime, timezone

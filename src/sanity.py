@@ -1,22 +1,20 @@
 """
-Sanity checks for the change report -- the demographic judgement a raw
-diff can't provide on its own. Implemented so far, against what's actually
-in the data bank today:
+Sanity checks for the change report: the demographic judgement a raw diff
+cannot provide on its own.
 
-    - plausible range per indicator (catches a decimal-point slip or a unit
-      mismatch, not meant to second-guess a real number)
+    - plausible range per indicator, to catch a decimal-point slip or a unit
+      mismatch, not to second-guess a real number
     - year-on-year volatility against a series' own history, plus a fixed
-      absolute cap for life expectancy (not moving more than ~1 year
-      year-on-year without explanation)
+      absolute cap for life expectancy
 
-Not yet implemented, because the underlying data isn't in the bank: sex
-ratio at birth (blocked on a sex-of-infant dimension not being populated
-in any TUIK fertility dataflow checked so far) and provincial values
-summing to the national total (no provincial breakdown fetched yet).
+Not implemented, because the underlying data is not in the bank: sex ratio
+at birth (no sex-of-infant dimension is populated in any TUIK fertility
+dataflow checked so far) and provincial values summing to the national
+total (no provincial breakdown fetched yet).
 
 Every check returns (status, message) with status in {"ok", "warn"} and
-never raises or blocks anything -- these are for the change report to
-display, not a gate.
+never raises or blocks anything: these are for the report to display, not a
+gate.
 """
 
 import pandas as pd
@@ -109,14 +107,10 @@ def check_yoy_volatility(indicator: str, history: pd.Series) -> tuple[str, str]:
         return "ok", "year-on-year change within historical volatility (limited history)"
 
     stdev = prior_deltas.iloc[:-1].std()
-    # Also require the move to exceed the largest one the series has ever
-    # actually made, not just N x its own stdev: a smooth, low-variance
-    # series can have a stdev so tiny that an entirely ordinary move trips
-    # the multiplier alone. The stdev multiplier stays the primary signal
-    # (it's what makes the check adaptive per series); this is a sanity
-    # floor under it -- a move that's merely large *for this quiet series*
-    # but still smaller than something the series has already done isn't
-    # the "look closer, this might be a data error" case the check exists for.
+    # Also require the move to exceed the largest the series has ever made,
+    # not just N x its own stdev: a smooth series can have a stdev so tiny
+    # that an ordinary move trips the multiplier alone. The multiplier stays
+    # the primary, per-series-adaptive signal; this is a floor under it.
     prior_max_abs = prior_deltas.iloc[:-1].abs().max()
     if stdev and abs(latest_delta) > VOLATILITY_STDEV_MULTIPLIER * stdev and abs(latest_delta) > prior_max_abs:
         return (

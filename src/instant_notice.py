@@ -1,37 +1,22 @@
 """
-Condensed, fact-only notices for the instant change channel. Two output
-lengths from the same underlying data as report.py -- deliberately no new
-content generation, just shorter renderings of the same facts:
+Condensed, fact-only notices for the instant change channel: shorter
+renderings of exactly the same facts report.py produces, never new content.
 
-    - headline()      one line, used as the Atom feed entry title
-    - bluesky_text()  <=300 graphemes, used as the Bluesky post body
+    headline()      one line, used as the Atom entry title
+    bluesky_text()  <=300 graphemes, used as the Bluesky post body
 
-English, deliberately: this channel's audience is researchers/demographers
-doing a quick check of what changed, who mostly work in English for this
-kind of release (TurkStat's own international releases, Eurostat, academic
-demography all default to it); a Turkish-narrative audience is better
-served by long-form blog content instead.
+English, because this channel serves researchers doing a quick check of what
+changed, who mostly work in English for this kind of release. A
+Turkish-narrative audience is better served by long-form blog content.
 
-Scoped to Turkiye only (ref_area == 'TR'). filter_turkiye() is the one gate
-every caller applies before building notices from a diff_observations()
--shaped DataFrame -- posting every change across ~60 European geos would
-be noise, not signal.
+Scoped to Türkiye only: posting every change across ~60 European geos would
+be noise. filter_turkiye() is the gate every caller applies first.
 
-Trend comparisons are derived from the series' own historical values via
-series_history(), never from the diff row's old_value/new_value pair
-alone -- that pair only means something for REVISED (same period, value
-changed). For a genuine NEW_PERIOD event (a new year's data appearing --
-the common case) old_value is legitimately blank, since no row existed for
-that period before; relying on it alone would silently produce a bare,
-comparison-free headline for the most common real event this channel
-exists to report.
-
-The medium-term comparison is a 10-year high/low, not "vs the value N
-years ago": comparing to a single arbitrary past point is misleading for a
-genuinely volatile series (life expectancy is the clear case -- an unlucky
-single-year anchor during a mortality shock would make an otherwise flat
-decade look like a sharp move). A 10-year high/low is self-explanatory and
-robust to which exact year gets compared against.
+Trend comparisons come from the series' own history via series_history(),
+never from the diff row's old/new pair alone. That pair only means something
+for REVISED; for a NEW_PERIOD (the common case) old_value is legitimately
+blank, so relying on it would produce a bare, comparison-free headline for
+the most common event this channel exists to report.
 """
 
 import re
@@ -39,14 +24,12 @@ import re
 import pandas as pd
 
 from report import (
-    INDICATOR_DECIMALS,
-    INDICATOR_LABELS,
     REF_AREA_LABELS,
     _prior_point,
     direction,
-    format_number as _format_number,
+    format_number,
     generate_change_report,
-    indicator_label as _indicator_label,
+    indicator_label,
     record,
     series_history,
     source_label,
@@ -54,89 +37,65 @@ from report import (
 from sanity import check_plausible_range, check_yoy_volatility
 
 BLUESKY_MAX_GRAPHEMES = 300
+
+# The medium-term comparison is a 10-year high/low rather than "vs the value
+# N years ago": a single arbitrary past anchor is misleading for a volatile
+# series, where an unlucky year during a mortality shock would make an
+# otherwise flat decade look like a sharp move.
 RECENT_WINDOW_YEARS = 10
 
-# INDICATOR_DECIMALS / _format_number / _prior_point / INDICATOR_LABELS /
-# REF_AREA_LABELS / _indicator_label actually live in report.py, so
-# CHANGE_REPORT.md and this module's feed_content share the exact same
-# per-indicator formatting and prior-year lookup -- re-imported here under
-# their original names so every call site in this file and in
-# baseline_notice.py keeps working unchanged.
+# A single dataflow shedding more than this many values in one run is not a
+# routine event on a channel that posts one fact at a time. It is either a
+# genuine mass withdrawal, which deserves a human read before it is
+# announced, or a pipeline fault presenting as one. Either way the notices
+# are suppressed and the change report still carries every row, so the PR
+# shows the full picture.
+MAX_AUTO_POST_WITHDRAWALS = 10
 
-# Which change classes get an instant notice at all. NEW_SERIES is
-# deliberately excluded: a series debuting with its whole fetched history
-# attached isn't "TurkStat/Eurostat published something new today" -- it's
-# either backfill noise or just starting to track an indicator that was
-# already accessible, and the data alone can't tell those two apart from a
-# genuine new publication. WITHDRAWN is rare and notable enough to keep.
+# Which change classes get an instant notice. NEW_SERIES is excluded: a
+# series debuting with its whole fetched history is either backfill noise or
+# simply the start of tracking something already available, and the data
+# alone cannot tell those apart from a genuine new publication. WITHDRAWN is
+# rare and notable enough to keep.
 NOTICE_CLASSES = {"NEW_PERIOD", "REVISED", "WITHDRAWN"}
 
-# Curated per-release subset for source == 'tuik_press': a single TurkStat
-# press release can flip ~10-26 series at once. Posting every one
-# separately would be a burst, not the steady one-fact-at-a-time cadence
-# every other post on this channel has. Only these headline indicators
-# (Total sex only, except where noted) are eligible for an instant notice
-# when source is 'tuik_press' -- everything else from that release stays
-# visible in the data bank and CHANGE_REPORT.md without posting.
+# Curated per-release subset for source == 'tuik_press': one TurkStat press
+# release can flip ~10-26 series at once, and posting each separately would
+# be a burst rather than the steady one-fact-at-a-time cadence this channel
+# keeps. Everything outside this set stays in the data bank and
+# CHANGE_REPORT.md without posting.
+#
+# ASFR and HEALTHY_LIFE_YEARS are deliberately absent: both split across
+# several age groups with no single national figure, and
+# filter_posting_sources() matches on (indicator, sex) only, so curating
+# either would make every age group separately eligible.
 CURATED_PRESS_INDICATORS = {
-    ("TFR", "T"),                          # Birth Statistics release headline
-    ("ADOLESCENT_FERTILITY_RATE", "T"),    # Birth Statistics
-    ("CBR", "T"),                          # Birth Statistics
-    ("MEAN_AGE_CHILDBEARING", "T"),        # Birth Statistics
-    ("MEAN_AGE_FIRST_BIRTH", "T"),         # Birth Statistics
-    ("CDR", "T"),                          # Death and Causes of Death release headline
-    ("INFANT_MORTALITY_RATE", "T"),        # Death and Causes of Death
-    ("UNDER5_MORTALITY_RATE", "T"),        # Death and Causes of Death
-    ("INTERNAL_MIGRATION_RATE", "T"),      # Internal Migration Statistics release headline
-    ("TOTAL_POPULATION", "T"),             # Address Based Population Registration System release headline
-    ("CRUDE_MARRIAGE_RATE", "T"),          # Marriage and Divorce Statistics release headline
-    ("CRUDE_DIVORCE_RATE", "T"),           # Marriage and Divorce Statistics
-    ("MEAN_AGE_FIRST_MARRIAGE", "M"),      # Marriage and Divorce Statistics -- no combined-sex
-    ("MEAN_AGE_FIRST_MARRIAGE", "F"),      # figure exists in the source table, so both post
-    ("IMMIGRANTS", "T"),                   # International Migration Statistics release headline
-    ("EMIGRANTS", "T"),                    # International Migration Statistics
-    # ASFR and HEALTHY_LIFE_YEARS deliberately not curated -- both are
-    # broken into several age groups with no single national figure;
-    # filter_posting_sources() below only matches on (indicator, sex), so
-    # curating either as-is would make every age group separately
-    # eligible instead of one headline value.
+    ("TFR", "T"),                          # Birth Statistics headline
+    ("ADOLESCENT_FERTILITY_RATE", "T"),
+    ("CBR", "T"),
+    ("MEAN_AGE_CHILDBEARING", "T"),
+    ("MEAN_AGE_FIRST_BIRTH", "T"),
+    ("CDR", "T"),                          # Death and Causes of Death headline
+    ("INFANT_MORTALITY_RATE", "T"),
+    ("UNDER5_MORTALITY_RATE", "T"),
+    ("INTERNAL_MIGRATION_RATE", "T"),      # Internal Migration headline
+    ("TOTAL_POPULATION", "T"),             # ABPRS headline
+    ("CRUDE_MARRIAGE_RATE", "T"),          # Marriage and Divorce headline
+    ("CRUDE_DIVORCE_RATE", "T"),
+    ("MEAN_AGE_FIRST_MARRIAGE", "M"),      # no combined-sex figure exists in
+    ("MEAN_AGE_FIRST_MARRIAGE", "F"),      # the source table, so both post
+    ("IMMIGRANTS", "T"),                   # International Migration headline
+    ("EMIGRANTS", "T"),
 }
 
-
-def filter_posting_sources(changes: pd.DataFrame) -> pd.DataFrame:
-    """Second gate, run after filter_turkiye() in build_notices() below.
-
-    source == 'tuik' (SDMX) never posts: tuik_press covers the same
-    indicators faster, so SDMX is fetched and stored for the archive but
-    is no longer a public-notice source. source == 'tuik_press' is
-    restricted to CURATED_PRESS_INDICATORS. Every other source (eurostat)
-    passes through unrestricted.
-    """
-    if changes.empty:
-        return changes
-    is_tuik_sdmx = changes["source"] == "tuik"
-    is_press = changes["source"] == "tuik_press"
-    press_allowed = changes.apply(lambda r: (r["indicator"], r["sex"]) in CURATED_PRESS_INDICATORS, axis=1)
-    return changes[~is_tuik_sdmx & (~is_press | press_allowed)]
-
-
-# Some indicators (e.g. mean age at first marriage) carry separate male and
-# female series -- a real run posts each as its own notice, identical
-# wording apart from the number, so which one is which is never left to be
-# inferred. Omitted entirely for sex='T' (the common case, no breakdown).
+# Stated inline only when a series actually carries a breakdown; omitted for
+# the common sex='T' case.
 SEX_LABELS = {"M": "men", "F": "women"}
 
-# Y15T19-style age-band codes -- ASFR's 7 age groups are the real case
-# (Y15T19 .. Y45T49). Only bands like this need stating explicitly: an
+# Y15T19-style bands only (ASFR's 7 age groups are the real case). An
 # indicator like LIFE_EXPECTANCY_15 already says "at Age 15" in its own
-# name (INDICATOR_LABELS), so restating its age code (Y15) would be
-# redundant, not clarifying -- this only fires for a genuine T-to-T range.
+# label, so restating its age code would be redundant.
 _AGE_BAND_RE = re.compile(r"^Y(\d+)T(\d+)$")
-
-
-def _age_band_label(age: str) -> str | None:
-    m = _AGE_BAND_RE.match(age)
-    return f"ages {m.group(1)}-{m.group(2)}" if m else None
 
 
 def filter_turkiye(changes: pd.DataFrame) -> pd.DataFrame:
@@ -146,19 +105,34 @@ def filter_turkiye(changes: pd.DataFrame) -> pd.DataFrame:
     return changes[(changes["ref_area"] == "TR") & (changes["change_class"].isin(NOTICE_CLASSES))]
 
 
-def _area_source_label(row: pd.Series) -> str:
-    """'Türkiye, Eurostat' -- area, source, and (when the series has a sex
-    and/or age-band breakdown) sex/age, together in one parenthetical.
-    TurkStat and Eurostat report slightly different numbers for the same
-    indicator (confirmed, e.g. CBR), so which one a figure came from is
-    never left implicit -- same reasoning as report.py's source_label(),
-    just folded into this channel's compact one-line format instead of a
-    separate line. The age-band clause matters for ASFR, which has 7
-    age-specific series that would otherwise produce a byte-for-byte
-    identical label apart from the number.
+def filter_posting_sources(changes: pd.DataFrame) -> pd.DataFrame:
+    """Second gate, applied after filter_turkiye().
+
+    source == 'tuik' (SDMX) never posts: tuik_press carries the same
+    indicators sooner, so SDMX is fetched and stored for the archive only.
+    source == 'tuik_press' is restricted to CURATED_PRESS_INDICATORS. Every
+    other source (eurostat) passes through unrestricted.
     """
-    area = REF_AREA_LABELS.get(row["ref_area"], row["ref_area"])
-    parts = [area, source_label(row["source"])]
+    if changes.empty:
+        return changes
+    is_tuik_sdmx = changes["source"] == "tuik"
+    is_press = changes["source"] == "tuik_press"
+    press_allowed = changes.apply(lambda r: (r["indicator"], r["sex"]) in CURATED_PRESS_INDICATORS, axis=1)
+    return changes[~is_tuik_sdmx & (~is_press | press_allowed)]
+
+
+def _age_band_label(age: str) -> str | None:
+    m = _AGE_BAND_RE.match(age)
+    return f"ages {m.group(1)}-{m.group(2)}" if m else None
+
+
+def area_source_label(row: pd.Series) -> str:
+    """'Türkiye, Eurostat, women, ages 15-19' -- area, source, and any sex or
+    age-band breakdown in one parenthetical. TurkStat and Eurostat report
+    slightly different numbers for the same indicator, so which one a figure
+    came from is never left implicit. The age-band clause matters for ASFR,
+    whose 7 series would otherwise produce identical labels."""
+    parts = [REF_AREA_LABELS.get(row["ref_area"], row["ref_area"]), source_label(row["source"])]
     sex_label = SEX_LABELS.get(row["sex"])
     if sex_label:
         parts.append(sex_label)
@@ -168,12 +142,11 @@ def _area_source_label(row: pd.Series) -> str:
     return ", ".join(parts)
 
 
-def _prior_comparison_clause(current_value: float, prior_period: str, prior_value: float, indicator: str) -> str:
-    prior_str = _format_number(prior_value, indicator)
+def prior_comparison_clause(current_value: float, prior_period: str, prior_value: float, indicator: str) -> str:
     delta = current_value - prior_value
     trend = "up" if delta > 0 else "down" if delta < 0 else "unchanged"
     pct = f" ({delta / prior_value * 100:+.1f}%)" if prior_value else ""
-    return f"{trend} from {prior_str} in {prior_period}{pct}"
+    return f"{trend} from {format_number(prior_value, indicator)} in {prior_period}{pct}"
 
 
 def _is_alltime_extreme(history: pd.Series, current_value: float) -> bool:
@@ -182,19 +155,18 @@ def _is_alltime_extreme(history: pd.Series, current_value: float) -> bool:
     return (history == history.min()).sum() == 1 and current_value == history.min()
 
 
-def _recent_extreme_note(history: pd.Series, current_period: str, current_value: float) -> str | None:
-    """Note when current_value is the highest/lowest value in the trailing
-    RECENT_WINDOW_YEARS years -- position-aware (works correctly even for a
-    non-latest reported period, unlike report.py's record()/direction()),
-    and suppressed whenever the same value is *also* the all-time record:
-    that's the strictly stronger fact, no need to state both.
-    """
+def recent_extreme_note(history: pd.Series, current_period: str, current_value: float) -> str | None:
+    """Whether current_value is the highest/lowest of the trailing
+    RECENT_WINDOW_YEARS. Position-aware, so it stays correct for a revision
+    to a non-latest period, unlike report.record()/direction(). Suppressed
+    when the value is also the all-time record: that is the strictly stronger
+    fact, no need to state both."""
     if _is_alltime_extreme(history, current_value):
         return None
     try:
         cutoff = str(int(current_period) - RECENT_WINDOW_YEARS + 1)
     except (ValueError, TypeError):
-        return None  # non-numeric period (e.g. quarterly) -- skip, don't guess
+        return None  # non-numeric period (a multi-year range) -- skip, don't guess
     window = history[(history.index >= cutoff) & (history.index <= current_period)]
     if len(window) < 2:
         return None
@@ -205,73 +177,35 @@ def _recent_extreme_note(history: pd.Series, current_period: str, current_value:
     return None
 
 
-def _value_headline(row: pd.Series, history: pd.Series) -> str:
-    area_source = _area_source_label(row)
-    value = row["new_value"]
-    current_period = row["time_period"]
-    label = _indicator_label(row["indicator"])
-    text = f"{label} ({area_source}) {current_period}: {_format_number(value, row['indicator'])}"
+def sanity_flags(indicator: str, value: float, history: pd.Series, is_latest: bool) -> list[str]:
+    """Compact warn-only flags for public text. build_notices() builds
+    feed_content with include_sanity=False, so this terse "look closer" flag
+    is the only sanity signal public readers see.
 
-    if row["change_class"] == "REVISED" and pd.notna(row["old_value"]):
-        old_str = _format_number(row["old_value"], row["indicator"])
-        text += f", revised from {old_str}"
-
-    prior_period, prior_value = _prior_point(history, current_period)
-    if prior_period is not None:
-        text += ", " + _prior_comparison_clause(value, prior_period, prior_value, row["indicator"])
-
-    return text
-
-
-def headline(row: pd.Series, history: pd.Series | None = None) -> str:
-    """One-line, fact-only summary. Used as the Atom entry title, and as
-    the base of the Bluesky post text. `history` should be the series'
-    full history including the current point (series_history()'s return
-    value) for NEW_PERIOD/REVISED rows -- omit only for WITHDRAWN, where no
-    value comparison applies.
-    """
-    if row["change_class"] == "WITHDRAWN":
-        area_source = _area_source_label(row)
-        label = _indicator_label(row["indicator"])
-        old_str = _format_number(row["old_value"], row["indicator"])
-        return f"{label} ({area_source}) {row['time_period']}: value withdrawn (was {old_str})"
-    return _value_headline(row, history if history is not None else pd.Series(dtype=float))
-
-
-def _sanity_flags(indicator: str, value: float, history: pd.Series, is_latest: bool) -> list[str]:
-    """Compact WARN-only flags for the public Bluesky/headline text.
-    build_notices() below builds feed_content with include_sanity=False --
-    full [ok]/[warn] detail is for CHANGE_REPORT.md's reviewer audience,
-    not the public feed -- so this terse "look closer at this one" flag is
-    the only sanity-check signal public readers see at all.
-    check_plausible_range checks `value` directly, so it always runs;
-    check_yoy_volatility reads history's last entry as "the current one"
-    the same way direction()/record() do, so it only runs when `is_latest`.
+    check_plausible_range inspects `value` directly and always runs;
+    check_yoy_volatility reads history's last entry as the current one, so it
+    only runs when `is_latest`.
     """
     flags = []
-    status, _ = check_plausible_range(indicator, value)
-    if status != "ok":
+    if check_plausible_range(indicator, value)[0] != "ok":
         flags.append("outside plausible range")
-    if is_latest and len(history) > 1:
-        status, _ = check_yoy_volatility(indicator, history)
-        if status != "ok":
-            flags.append("unusually large year-on-year move")
+    if is_latest and len(history) > 1 and check_yoy_volatility(indicator, history)[0] != "ok":
+        flags.append("unusually large year-on-year move")
     return flags
 
 
-def bluesky_text(row: pd.Series, con, url: str | None = None) -> str:
-    """Fact-only text, <=300 graphemes: the headline, plus direction/streak,
-    record, and sanity-flag clauses, each added only if there's still room.
-    Bluesky counts graphemes, not bytes or UTF-16 units -- for the plain
-    ASCII + Turkish-letter text this produces (no combining marks, no
-    emoji), Python's len() on the str is an accurate proxy, one Python
-    character per grapheme.
-    """
-    history = pd.Series(dtype=float)
-    if row["change_class"] in ("NEW_PERIOD", "REVISED"):
-        history = series_history(con, row, row["new_snapshot_id"])
+def compose_post(lead: str, row: pd.Series, history: pd.Series, url: str | None, include_sanity: bool) -> str:
+    """Build a <=300-grapheme post from `lead` plus trend, record, 10-year
+    extreme and sanity clauses, each appended only if it still fits.
 
-    text = headline(row, history) + "."
+    Shared by bluesky_text() and baseline_notice.baseline_bluesky_text(),
+    which differ only in their lead sentence.
+
+    Bluesky counts graphemes rather than bytes or UTF-16 units. For the plain
+    ASCII plus Turkish-letter text produced here (no combining marks, no
+    emoji) Python's len() on the str is an accurate proxy.
+    """
+    text = lead + "."
     url_budget = len(url) + 1 if url else 0
 
     def try_append(extra: str) -> None:
@@ -279,14 +213,10 @@ def bluesky_text(row: pd.Series, con, url: str | None = None) -> str:
         if len(text) + len(extra) <= BLUESKY_MAX_GRAPHEMES - url_budget:
             text += extra
 
-    # direction()/record() (report.py) read the series' *last* entry as
-    # "the current one" -- correct whenever the reported period is the
-    # newest one on file, which is the overwhelming common case (a fresh
-    # NEW_PERIOD always is), but wrong for a REVISED/backfilled period that
-    # isn't the newest (see _prior_point()'s docstring for the same class
-    # of issue). Guarded here rather than fixed in report.py, which several
-    # other things already depend on -- skip these clauses entirely rather
-    # than risk stating a streak/record that describes a different period.
+    # direction()/record() read the series' last entry as "the current one",
+    # correct whenever the reported period is the newest on file (always true
+    # for a fresh NEW_PERIOD) but wrong for a revision to an older period.
+    # Skipped entirely in that case rather than risk describing the wrong one.
     is_latest = len(history) > 0 and row["time_period"] == history.index[-1]
     if len(history) > 1 and is_latest:
         try_append(f" {direction(history)}.")
@@ -294,16 +224,13 @@ def bluesky_text(row: pd.Series, con, url: str | None = None) -> str:
         if record_note:
             try_append(f" {record_note}.")
 
-    # Position-aware (unlike record()/direction() above), so this runs
-    # regardless of is_latest -- correct for a revision to a non-latest
-    # period too, not just a fresh NEW_PERIOD.
     if len(history) > 1:
-        recent_note = _recent_extreme_note(history, row["time_period"], row["new_value"])
+        recent_note = recent_extreme_note(history, row["time_period"], row["new_value"])
         if recent_note:
             try_append(f" {recent_note}.")
 
-    if row["change_class"] in ("NEW_PERIOD", "REVISED"):
-        for flag in _sanity_flags(row["indicator"], row["new_value"], history, is_latest):
+    if include_sanity:
+        for flag in sanity_flags(row["indicator"], row["new_value"], history, is_latest):
             try_append(f" ⚠ {flag}.")
 
     if url:
@@ -315,29 +242,104 @@ def bluesky_text(row: pd.Series, con, url: str | None = None) -> str:
             text = text[: max(budget, 0)].rstrip() + "... " + url
         else:
             text = text[: BLUESKY_MAX_GRAPHEMES - 1].rstrip() + "…"
-
     return text
 
 
-def build_notices(changes: pd.DataFrame, con, base_url: str | None = None) -> list[dict]:
-    """One notice per Turkiye change, ready for feed.py / bluesky_client.py.
+def _value_headline(row: pd.Series, history: pd.Series) -> str:
+    value, period, indicator = row["new_value"], row["time_period"], row["indicator"]
+    text = (
+        f"{indicator_label(indicator)} ({area_source_label(row)}) "
+        f"{period}: {format_number(value, indicator)}"
+    )
+    if row["change_class"] == "REVISED" and pd.notna(row["old_value"]):
+        text += f", revised from {format_number(row['old_value'], indicator)}"
 
-    `base_url`, if given, becomes a per-notice link (e.g. to a future
-    dashboard indicator page) appended to the Bluesky text and worked into
-    the byte-offset facet math -- optional, unused until a dashboard
-    exists to link to.
+    prior_period, prior_value = _prior_point(history, period)
+    if prior_period is not None:
+        text += ", " + prior_comparison_clause(value, prior_period, prior_value, indicator)
+    return text
+
+
+def headline(row: pd.Series, history: pd.Series | None = None) -> str:
+    """One-line, fact-only summary: the Atom entry title, and the base of the
+    Bluesky text. `history` should be the series' full history including the
+    current point; omit it only for WITHDRAWN, where no value comparison
+    applies."""
+    if row["change_class"] == "WITHDRAWN":
+        return (
+            f"{indicator_label(row['indicator'])} ({area_source_label(row)}) "
+            f"{row['time_period']}: value withdrawn "
+            f"(was {format_number(row['old_value'], row['indicator'])})"
+        )
+    return _value_headline(row, history if history is not None else pd.Series(dtype=float))
+
+
+def _history_for(row: pd.Series, con) -> pd.Series:
+    if row["change_class"] not in ("NEW_PERIOD", "REVISED"):
+        return pd.Series(dtype=float)
+    return series_history(con, row, row["new_snapshot_id"])
+
+
+def bluesky_text(row: pd.Series, con, url: str | None = None) -> str:
+    history = _history_for(row, con)
+    return compose_post(
+        headline(row, history),
+        row,
+        history,
+        url,
+        include_sanity=row["change_class"] in ("NEW_PERIOD", "REVISED"),
+    )
+
+
+def suppress_mass_withdrawals(changes: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
+    """Drop every notice from a dataflow that withdrew more than
+    MAX_AUTO_POST_WITHDRAWALS values in this run.
+
+    Counted over all of `changes`, before the Türkiye filter: the fault or
+    event is dataflow-wide even when only a few of its rows would post.
+    Returns the surviving rows and one description per suppressed dataflow.
     """
+    if changes.empty or "change_class" not in changes:
+        return changes, []
+    withdrawn = changes[changes["change_class"] == "WITHDRAWN"]
+    if withdrawn.empty:
+        return changes, []
+
+    counts = withdrawn.groupby(["source", "dataflow_id"]).size()
+    over = counts[counts > MAX_AUTO_POST_WITHDRAWALS]
+    if over.empty:
+        return changes, []
+
+    notes = [f"{src}/{flow}: {n} withdrawals" for (src, flow), n in over.items()]
+    blocked = set(over.index)
+    keep = ~changes.set_index(["source", "dataflow_id"]).index.isin(blocked)
+    return changes[keep], notes
+
+
+def build_notices(
+    changes: pd.DataFrame, con, base_url: str | None = None
+) -> tuple[list[dict], list[str]]:
+    """One notice per Türkiye change, ready for feed.py / bluesky_client.py.
+
+    `base_url`, if given, becomes a per-notice link appended to the Bluesky
+    text. Returns (notices, suppressed) where `suppressed` describes any
+    dataflow held back by suppress_mass_withdrawals().
+    """
+    changes, suppressed = suppress_mass_withdrawals(changes)
     tr_changes = filter_posting_sources(filter_turkiye(changes))
     notices = []
     for _, row in tr_changes.iterrows():
-        history = pd.Series(dtype=float)
-        if row["change_class"] in ("NEW_PERIOD", "REVISED"):
-            history = series_history(con, row, row["new_snapshot_id"])
+        history = _history_for(row, con)
         notices.append(
             {
                 "title": headline(row, history),
-                "bluesky_text": bluesky_text(row, con, url=base_url),
-                "feed_content": generate_change_report(pd.DataFrame([row]), con, include_sanity=False, public=True),
+                "bluesky_text": compose_post(
+                    headline(row, history), row, history, base_url,
+                    include_sanity=row["change_class"] in ("NEW_PERIOD", "REVISED"),
+                ),
+                "feed_content": generate_change_report(
+                    pd.DataFrame([row]), con, include_sanity=False, public=True
+                ),
                 "indicator": row["indicator"],
                 "ref_area": row["ref_area"],
                 "time_period": row["time_period"],
@@ -345,4 +347,4 @@ def build_notices(changes: pd.DataFrame, con, base_url: str | None = None) -> li
                 "snapshot_id": row["new_snapshot_id"],
             }
         )
-    return notices
+    return notices, suppressed

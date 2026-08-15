@@ -1,14 +1,11 @@
 """
-Minimal Bluesky (AT Protocol) client -- just enough to log in and post plain
-text with an optional link. Deliberately raw `requests` calls rather than
-the `atproto` package: the actual protocol surface used here is about three
-HTTP calls, and writing it directly keeps it auditable without a new
-dependency for that.
+Minimal Bluesky (AT Protocol) client: enough to log in and post plain text
+with an optional link. Raw `requests` rather than the `atproto` package,
+since the protocol surface used here is three HTTP calls.
 
-Credentials come from the environment (BLUESKY_DATA_HANDLE /
-BLUESKY_DATA_APP_PASSWORD), loaded via .env locally the same way
-tuik_client.py loads TUIK_API_KEY -- this module only ever reads a value
-already present in the environment, never prompts for or writes one.
+Credentials come from BLUESKY_DATA_HANDLE / BLUESKY_DATA_APP_PASSWORD,
+loaded via .env locally. This module only reads values already in the
+environment; it never prompts for or writes one.
 """
 
 import os
@@ -34,10 +31,8 @@ def get_credentials() -> tuple[str, str]:
 
 
 def create_session(handle: str, app_password: str) -> dict:
-    """Authenticate with an App Password (never the account password --
-    Bluesky Settings -> App Passwords). Returns a dict with accessJwt, did,
-    etc.
-    """
+    """Authenticate with an App Password, never the account password
+    (Bluesky Settings -> App Passwords). Returns accessJwt, did, and more."""
     resp = requests.post(
         f"{BASE_URL}/com.atproto.server.createSession",
         json={"identifier": handle, "password": app_password},
@@ -50,13 +45,10 @@ def create_session(handle: str, app_password: str) -> dict:
 def byte_range(text: str, substring: str) -> tuple[int, int]:
     """UTF-8 byte offsets of `substring` within `text`.
 
-    Bluesky's rich-text facets index into the UTF-8 *byte* encoding of the
-    post, not character/codepoint positions. Turkish characters (ş ğ ı ö ü ç
-    İ) are two bytes each in UTF-8, so any Turkish text before a link shifts
-    the byte offset away from its character offset -- computing this from
-    `str.index()` directly, without encoding first, produces broken or
-    mangled links whenever Turkish text precedes the link. Always go through
-    this function, never `text.index(substring)`.
+    Bluesky's rich-text facets index into the post's UTF-8 *byte* encoding,
+    not codepoint positions. Turkish characters (ş ğ ı ö ü ç İ) take two
+    bytes each, so any Turkish text before a link shifts its byte offset away
+    from its character offset. Never use `text.index()` for this.
     """
     encoded = text.encode("utf-8")
     sub_encoded = substring.encode("utf-8")
@@ -73,7 +65,7 @@ def build_post_record(text: str, link_url: str | None = None) -> dict:
     record = {
         "$type": "app.bsky.feed.post",
         "text": text,
-        "createdAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.") + f"{datetime.now(timezone.utc).microsecond // 1000:03d}Z",
+        "createdAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
     }
     if link_url and link_url in text:
         start, end = byte_range(text, link_url)
@@ -100,12 +92,11 @@ def post(session: dict, text: str, link_url: str | None = None) -> dict:
 
 
 def delete_post(session: dict, uri: str) -> None:
-    """Delete a post by its at:// URI (as returned by post())."""
-    rkey = uri.rsplit("/", 1)[-1]
+    """Delete a post by its at:// URI, as returned by post()."""
     resp = requests.post(
         f"{BASE_URL}/com.atproto.repo.deleteRecord",
         headers={"Authorization": f"Bearer {session['accessJwt']}"},
-        json={"repo": session["did"], "collection": "app.bsky.feed.post", "rkey": rkey},
+        json={"repo": session["did"], "collection": "app.bsky.feed.post", "rkey": uri.rsplit("/", 1)[-1]},
         timeout=30,
     )
     resp.raise_for_status()

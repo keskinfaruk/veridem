@@ -1,13 +1,13 @@
 """
 Client for Eurostat's SDMX 2.1 dissemination API.
 
-No auth required (unlike TUIK). Eurostat's `format=SDMX-CSV` actually works
-here -- TUIK's NSI instance ignores that parameter (see tuik_client.py) -- so
-this client skips XML parsing entirely and fetches CSV straight into pandas.
+No auth required, unlike TUIK. Eurostat honours `format=SDMX-CSV` (TUIK's
+NSI instance ignores it), so this client skips XML parsing and reads CSV
+straight into pandas.
 
-Eurostat holds only the latest version of each dataset; there is no archive
-of past versions, so this project's own snapshot history is the only
-revision record.
+Eurostat holds only the latest version of each dataset with no archive of
+past versions, so this project's own snapshot history is the only revision
+record.
 """
 
 import xml.etree.ElementTree as ET
@@ -24,9 +24,11 @@ NS = {
 
 
 def get_dimension_order(dataset: str, agency: str = "ESTAT") -> list[str]:
-    """Fetch a dataset's DSD and return non-time dimension IDs in series-key
-    order. Same principle as tuik_client.py / series_key.py: never hardcode
-    a key template, always read the order from the live DSD."""
+    """
+    Fetch a dataset's DSD and return non-time dimension IDs in series-key
+    order. Same principle as tuik_client.py: never hardcode a key template,
+    always read the order from the live DSD.
+    """
     resp = requests.get(
         f"{BASE_URL}/dataflow/{agency}/{dataset}",
         params={"references": "children"},
@@ -40,11 +42,11 @@ def get_dimension_order(dataset: str, agency: str = "ESTAT") -> list[str]:
 
 
 def build_series_key(dim_order: list[str], filters: dict[str, str]) -> str:
-    """Build a dot-separated positional series key. `filters` maps dimension
-    id (case-insensitive -- Eurostat DSDs use lowercase ids) to a code, which
-    may itself be a '+'-joined list for SDMX OR semantics (e.g. multiple
-    indicators in one request). Dimensions not in `filters` are left as an
-    empty segment (no filter), per SDMX REST spec.
+    """
+    Build a dot-separated positional series key. `filters` maps dimension id
+    (case-insensitive, since Eurostat DSDs use lowercase) to a code, which may
+    be a '+'-joined list for SDMX OR semantics. Dimensions absent from
+    `filters` are left as an empty segment, per the SDMX REST spec.
     """
     lookup = {k.lower(): v for k, v in filters.items()}
     unknown = set(lookup) - {d.lower() for d in dim_order}

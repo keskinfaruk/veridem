@@ -1,17 +1,12 @@
 """
-Append-only, private log of catalogue-level ("technical") changes -- two
-independent catalogues, TUIK's SDMX dataflow list (NEW_DATAFLOW,
-DATAFLOW_WITHDRAWN, STRUCTURAL -- dataflow_inventory.py) and tuik_press's
-theme list (PRESS_THEME_NEW, PRESS_THEME_WITHDRAWN --
-press_dataflow_inventory.py), logged into the same dated section.
+Append-only, private log of catalogue-level ("technical") changes: TÜİK's
+SDMX dataflow list and tuik_press's theme list (see inventory.py), both
+written into the same dated section.
 
-Distinct from demographic data changes (NEW_PERIOD/REVISED/WITHDRAWN/
-NEW_SERIES on an actual indicator value, see report.py/diff.py): a
-technical change means one of TUIK's service catalogues changed shape, not
-that a demographic figure moved. Never posted anywhere public and never
-goes through a PR -- daily.yml commits this file straight to main (same
-pattern as baseline_notice.py's queue-progress bookkeeping). Kept only as
-reference material for the project owner's own blog writing.
+A technical change means one of TÜİK's service catalogues changed shape,
+not that a demographic figure moved. Never posted anywhere and never opened
+as a PR: daily.yml commits this file straight to main. Kept as reference
+material for the project owner's own writing.
 """
 
 from datetime import datetime, timezone
@@ -31,8 +26,8 @@ LOG_PATH = Path(__file__).resolve().parent.parent / "data" / "technical_changes_
 
 
 def _class_rows(changes: pd.DataFrame, change_class: str) -> pd.DataFrame:
-    """changes["change_class"] == ..., safe for an empty frame that may not
-    even have a change_class column (e.g. a bare, no-op pd.DataFrame())."""
+    """Filter by change_class, safe on an empty frame that may not even have
+    a change_class column (a bare no-op pd.DataFrame())."""
     if changes.empty:
         return changes
     return changes[changes["change_class"] == change_class]
@@ -43,12 +38,9 @@ def render_entry(
     when: datetime | None = None,
     press_changes: pd.DataFrame | None = None,
 ) -> str:
-    """One dated Markdown section covering one run's catalogue-level
-    changes across both catalogues, grouped by class -- same per-row
-    rendering report.py uses for these classes (_inventory_block() /
-    _press_inventory_block()), just dated and meant to accumulate here run
-    over run instead of going into a one-shot PR body. Returns "" if
-    there's nothing to log in either catalogue."""
+    """One dated Markdown section covering one run's changes across both
+    catalogues, grouped by class, using report.py's own per-row rendering.
+    Returns "" when there is nothing to log."""
     press_changes = press_changes if press_changes is not None else pd.DataFrame()
     if inventory_changes.empty and press_changes.empty:
         return ""
@@ -81,11 +73,10 @@ def append_entry(
     when: datetime | None = None,
     press_changes: pd.DataFrame | None = None,
 ) -> bool:
-    """Append one run's catalogue changes (both catalogues) to LOG_PATH,
-    newest entry last (chronological, matching how you'd actually read back
-    through it). Returns whether anything was written -- False (no-op) when
-    both inputs are empty, same "no event, no action" convention as
-    everything else in the daily run."""
+    """Append one run's catalogue changes to LOG_PATH, newest entry last so
+    the file reads chronologically. Returns whether anything was written:
+    False when both inputs are empty, the same "no event, no action"
+    convention as the rest of the daily run."""
     entry = render_entry(inventory_changes, when, press_changes)
     if not entry:
         return False

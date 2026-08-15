@@ -1,20 +1,17 @@
 """
-Generic, indicator_map-driven TUIK fetch pipeline.
+Generic, indicator_map-driven TUIK SDMX fetch pipeline.
 
-Every dataflow audited so far shares the same generic shape -- a
-REF_AREA/FREQ/INDICATOR-keyed series, sometimes with one extra dimension
-carrying an age or sex breakdown -- so adding a TUIK indicator means adding
-a row to data/indicator_map.csv, not writing a new script. (fetch_tfr.py is
-a minimal single-indicator reference kept alongside this one, not part of
-the same pipeline.)
+Every dataflow audited so far shares the same shape, a
+REF_AREA/FREQ/INDICATOR-keyed series sometimes carrying one extra age or sex
+dimension, so adding an indicator means adding a row to
+data/indicator_map.csv rather than writing a new script.
 
-`age_dim` / `sex_dim` in indicator_map.csv name the DSD dimension (if any)
-that should populate the observations schema's `age` / `sex` columns for
-that indicator; leave blank for indicators with no such breakdown (they get
-'_T' / 'T'). Every other non-time dimension is left unfiltered in the series
-key and is expected to come back fixed at '_Z' (not applicable) for
-indicators that don't use it -- verify with a probe fetch before adding a
-new row; never assume a series key's shape from a sibling dataflow.
+`age_dim` / `sex_dim` name the DSD dimension that should populate the
+observations schema's `age` / `sex` columns; leave blank for indicators with
+no such breakdown (they get '_T' / 'T'). Every other non-time dimension is
+left unfiltered and is expected to come back fixed at '_Z' (not applicable).
+Verify with a probe fetch before adding a row; never assume a series key's
+shape from a sibling dataflow.
 """
 
 import xml.etree.ElementTree as ET
@@ -24,9 +21,8 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-from series_key import build_series_key, get_dimension_order
 from snapshot import dumps_other_dims, write_snapshot
-from tuik_client import NS, fetch_data, get_access_token
+from tuik_client import NS, build_series_key, fetch_data, get_access_token, get_dimension_order
 
 AGENCY = "TR"
 REF_AREA = "TR"
@@ -44,16 +40,15 @@ def _load_map() -> pd.DataFrame:
 
 
 def fetch_indicator(row: pd.Series, token: str, snapshot_id: str) -> pd.DataFrame:
-    """Fetch and normalize one indicator_map row's full series (all periods,
-    all values of its age/sex breakdown dimension if any).
+    """
+    Fetch and normalize one indicator_map row's full series: all periods, and
+    all values of its age/sex dimension if it has one.
 
-    `snapshot_id` is supplied by the caller, not generated here: several
-    indicator_map rows can share one dataflow_id (TUIK bundles multiple
-    indicators into a single dataflow), and every row for the same
-    dataflow_id in one fetch run must land in the same snapshot -- see
-    main()'s grouping. A snapshot_id generated per row here would give
-    diff.py's latest_two_snapshots() (keyed on dataflow_id alone) two
-    same-day snapshots to compare instead of today vs. yesterday.
+    `snapshot_id` comes from the caller rather than being generated here.
+    Several indicator_map rows can share one dataflow_id, and every row for the
+    same dataflow in one run must land in the same snapshot, since
+    diff.latest_two_snapshots() keys on dataflow_id alone: a per-row id would
+    give it two same-day snapshots to compare instead of today vs yesterday.
     """
     dataflow_id = row["dataflow_id"]
     version = row["version"]
@@ -129,7 +124,7 @@ def main() -> int:
             except requests.exceptions.HTTPError as e:
                 if e.response is not None and e.response.status_code == 404:
                     # The dataflow itself is gone from TUIK's catalogue, not a
-                    # transient error -- dataflow_inventory.py's daily diff
+                    # transient error -- inventory.py's daily catalogue diff
                     # already catches and reports this as DATAFLOW_WITHDRAWN
                     # (see report.py). Skip the whole group rather than write
                     # a partial snapshot for it.

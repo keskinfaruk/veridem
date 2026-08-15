@@ -1,33 +1,27 @@
 """
-Connector for TÜİK's press-release API. Turns tuik_press_client.py's raw
+Connector for TUIK's press-release API: turns tuik_press_client.py's raw
 table downloads into normalized `observations` rows, written through the
-same immutable-snapshot path every other source uses.
+same immutable-snapshot path as every other source.
 
 `source='tuik_press'`, never blended with `source='tuik'` (SDMX): a press
-figure can predate the SDMX service's own administrative revisions for
-the same period, so the two are kept as distinct, comparable series.
+figure can predate the SDMX service's own administrative revisions for the
+same period, so the two are kept as distinct, comparable series.
 
-Not indicator_map.csv-driven for parsing (unlike the SDMX connectors) --
-these are hand-designed Excel exports, so each table gets its own parser
-function below. indicator_map.csv still gets a descriptive row per
-indicator produced here, for discoverability.
+Parsing is not indicator_map-driven, unlike the SDMX connectors. These are
+hand-designed Excel exports, so each table gets its own parser below.
+indicator_map.csv still carries a descriptive row per indicator produced
+here, for discoverability.
 
-`dataflow_id` is a stable slug (e.g. PRESS_BASIC_FERTILITY_INDICATORS),
-never the press_id: TÜİK issues a new press_id every year, and snapshot
-history is keyed by (source, dataflow_id).
+`dataflow_id` is a stable slug (PRESS_BASIC_FERTILITY_INDICATORS), never the
+press_id: TUIK issues a new press_id every year, and snapshot history is
+keyed by (source, dataflow_id).
 
-Nine tables covered, all national-level: basic fertility indicators,
-basic mortality indicators, internal migration volume, total population
-and growth rate (ABPRS), marriage/divorce headline figures, international
-migration totals by sex, healthy life years by age group and sex (the
-only one with an `age` dimension and a multi-year `time_period` range,
-e.g. "2022-2024"), age-specific fertility rate, and mean age at first
-marriage (both extracted from an otherwise-provincial table's national
-total row).
+Nine national-level tables are covered; see TARGETS at the bottom.
 """
 
 import re
 from datetime import datetime, timezone
+from typing import Callable
 
 import pandas as pd
 
@@ -79,35 +73,106 @@ def _age_group_code(label: str) -> str | None:
     return None
 
 
-# Long format, one row per year, fixed columns. '(r)' marks a year
-# revised via updated administrative records.
+# --- the common shape --------------------------------------------------------
+# Five of the nine tables are long format: one row per year, the year in
+# column 0, and a fixed column-to-indicator mapping. `year_row_parser` builds
+# a parser for that shape from the mapping alone; the four irregular tables
+# keep their own functions below.
+#
+# The parenthesized marker in a year cell ('(r)', '(1)') means something
+# table-specific and is carried into obs_flag verbatim, never interpreted.
 
+
+def year_row_parser(columns: dict[int, dict]) -> Callable[[pd.DataFrame], list[dict]]:
+    """Parser for a long-format table. `columns` maps a column index to the
+    fields that column contributes (indicator, unit, and optionally sex or
+    age); sex defaults to 'T'."""
+
+    def parse(df: pd.DataFrame) -> list[dict]:
+        rows = []
+        for _, r in df.iterrows():
+            year, flag = _clean_year(r[0])
+            if year is None:
+                continue
+            for col, fields in columns.items():
+                value = _to_float(r[col])
+                if value is None:
+                    continue
+                rows.append(
+                    {"sex": "T", "time_period": year, "obs_value": value, "obs_flag": flag, **fields}
+                )
+        return rows
+
+    return parse
+
+
+# Basic fertility indicators. '(r)' marks a year revised via updated
+# administrative records. MEAN_AGE_FIRST_BIRTH is '-' before 2014, not
+# collected that far back.
 FERTILITY_TABLE = "Basic fertility indicators"
 FERTILITY_DATAFLOW_ID = "PRESS_BASIC_FERTILITY_INDICATORS"
-FERTILITY_COLUMNS = {
-    1: ("TOTAL_BIRTHS", "PERSONS"),
-    2: ("CBR", "PER_1000"),
-    3: ("TFR", "CHILDREN_PER_WOMAN"),
-    4: ("ADOLESCENT_FERTILITY_RATE", "PER_1000"),
-    5: ("MEAN_AGE_CHILDBEARING", "YEARS"),
-    6: ("MEAN_AGE_FIRST_BIRTH", "YEARS"),  # '-' before 2014 -- not yet collected that far back
-}
+parse_fertility_table = year_row_parser({
+    1: {"indicator": "TOTAL_BIRTHS", "unit": "PERSONS"},
+    2: {"indicator": "CBR", "unit": "PER_1000"},
+    3: {"indicator": "TFR", "unit": "CHILDREN_PER_WOMAN"},
+    4: {"indicator": "ADOLESCENT_FERTILITY_RATE", "unit": "PER_1000"},
+    5: {"indicator": "MEAN_AGE_CHILDBEARING", "unit": "YEARS"},
+    6: {"indicator": "MEAN_AGE_FIRST_BIRTH", "unit": "YEARS"},
+})
+
+# National internal-migration volume, not the province-level table. Two
+# 3-column groups (volume, rate) separated by a blank spacer column.
+# '(1)'/'(2)' mark a methodology break (foreign population excluded then
+# included), not a revision.
+MIGRATION_TABLE = "Size and proportion of population migrated across provinces by sex"
+MIGRATION_DATAFLOW_ID = "PRESS_INTERNAL_MIGRATION_VOLUME"
+parse_internal_migration_table = year_row_parser({
+    1: {"indicator": "INTERNAL_MIGRATION_VOLUME", "sex": "T", "unit": "PERSONS"},
+    2: {"indicator": "INTERNAL_MIGRATION_VOLUME", "sex": "M", "unit": "PERSONS"},
+    3: {"indicator": "INTERNAL_MIGRATION_VOLUME", "sex": "F", "unit": "PERSONS"},
+    5: {"indicator": "INTERNAL_MIGRATION_RATE", "sex": "T", "unit": "PERCENT"},
+    6: {"indicator": "INTERNAL_MIGRATION_RATE", "sex": "M", "unit": "PERCENT"},
+    7: {"indicator": "INTERNAL_MIGRATION_RATE", "sex": "F", "unit": "PERCENT"},
+})
+
+# Address Based Population Registration System. TOTAL_POPULATION differs from
+# Eurostat's POP_JAN1 (different reference date and methodology);
+# POP_GROWTH_RATE shares a name with the Eurostat indicator, kept separate by
+# `source`.
+POPULATION_TABLE = (
+    "Population, Annual Growth Rate of Population, Number of Provinces, Districts, "
+    "Towns, Villages and  Population Density"
+)
+POPULATION_DATAFLOW_ID = "PRESS_POPULATION_TOTAL"
+parse_population_table = year_row_parser({
+    1: {"indicator": "TOTAL_POPULATION", "unit": "PERSONS"},
+    2: {"indicator": "POP_GROWTH_RATE", "unit": "PER_1000"},
+})
+
+# Marriage and divorce headline figures. No sex breakdown in this table.
+MARRIAGE_DIVORCE_TABLE = (
+    "Number of marriages, crude marriage rate, number of divorces and crude divorce rate"
+)
+MARRIAGE_DIVORCE_DATAFLOW_ID = "PRESS_MARRIAGE_DIVORCE_HEADLINE"
+parse_marriage_divorce_table = year_row_parser({
+    1: {"indicator": "NUMBER_OF_MARRIAGES", "unit": "PERSONS"},
+    2: {"indicator": "CRUDE_MARRIAGE_RATE", "unit": "PER_1000"},
+    3: {"indicator": "NUMBER_OF_DIVORCES", "unit": "PERSONS"},
+    4: {"indicator": "CRUDE_DIVORCE_RATE", "unit": "PER_1000"},
+})
+
+# Age-specific fertility rate, 7 age bands. No sex breakdown (per woman).
+ASFR_TABLE = "Age specific fertility rates"
+ASFR_DATAFLOW_ID = "PRESS_ASFR"
+parse_asfr_table = year_row_parser({
+    col: {"indicator": "ASFR", "age": age, "unit": "PER_1000"}
+    for col, age in enumerate(
+        ["Y15T19", "Y20T24", "Y25T29", "Y30T34", "Y35T39", "Y40T44", "Y45T49"], start=1
+    )
+})
 
 
-def parse_fertility_table(df: pd.DataFrame) -> list[dict]:
-    rows = []
-    for _, r in df.iterrows():
-        year, flag = _clean_year(r[0])
-        if year is None:
-            continue
-        for col, (indicator, unit) in FERTILITY_COLUMNS.items():
-            value = _to_float(r[col])
-            if value is None:
-                continue
-            rows.append(
-                {"indicator": indicator, "sex": "T", "time_period": year, "obs_value": value, "obs_flag": flag, "unit": unit}
-            )
-    return rows
+# --- the four irregular tables -----------------------------------------------
 
 
 # Wide format: indicator+sex as rows (label forward-filled across a 1- or
@@ -186,96 +251,6 @@ def parse_mortality_table(df: pd.DataFrame) -> list[dict]:
             if value is None:
                 continue
             rows.append({"indicator": indicator, "sex": sex, "time_period": year, "obs_value": value, "obs_flag": flag, "unit": unit})
-    return rows
-
-
-# National-volume table (not the province-level in/out/net-migration
-# one). Two 3-column groups (volume, rate) with a blank spacer column.
-# '(1)'/'(2)' mark a methodology break (foreign population excluded/
-# included), not a revision -- kept in obs_flag as-is.
-
-MIGRATION_TABLE = "Size and proportion of population migrated across provinces by sex"
-MIGRATION_DATAFLOW_ID = "PRESS_INTERNAL_MIGRATION_VOLUME"
-MIGRATION_COLUMNS = {
-    1: ("INTERNAL_MIGRATION_VOLUME", "T", "PERSONS"),
-    2: ("INTERNAL_MIGRATION_VOLUME", "M", "PERSONS"),
-    3: ("INTERNAL_MIGRATION_VOLUME", "F", "PERSONS"),
-    5: ("INTERNAL_MIGRATION_RATE", "T", "PERCENT"),
-    6: ("INTERNAL_MIGRATION_RATE", "M", "PERCENT"),
-    7: ("INTERNAL_MIGRATION_RATE", "F", "PERCENT"),
-}
-
-
-def parse_internal_migration_table(df: pd.DataFrame) -> list[dict]:
-    rows = []
-    for _, r in df.iterrows():
-        year, flag = _clean_year(r[0])
-        if year is None:
-            continue
-        for col, (indicator, sex, unit) in MIGRATION_COLUMNS.items():
-            value = _to_float(r[col])
-            if value is None:
-                continue
-            rows.append(
-                {"indicator": indicator, "sex": sex, "time_period": year, "obs_value": value, "obs_flag": flag, "unit": unit}
-            )
-    return rows
-
-
-# Long format, one row per year, full 2007-2025 history in one fetch.
-# TOTAL_POPULATION is distinct from Eurostat's POP_JAN1 (different
-# reference date and methodology); POP_GROWTH_RATE shares the Eurostat
-# indicator's name, kept separate via source=.
-
-POPULATION_TABLE = "Population, Annual Growth Rate of Population, Number of Provinces, Districts, Towns, Villages and  Population Density"
-POPULATION_DATAFLOW_ID = "PRESS_POPULATION_TOTAL"
-POPULATION_COLUMNS = {
-    1: ("TOTAL_POPULATION", "PERSONS"),
-    2: ("POP_GROWTH_RATE", "PER_1000"),
-}
-
-
-def parse_population_table(df: pd.DataFrame) -> list[dict]:
-    rows = []
-    for _, r in df.iterrows():
-        year, flag = _clean_year(r[0])
-        if year is None:
-            continue
-        for col, (indicator, unit) in POPULATION_COLUMNS.items():
-            value = _to_float(r[col])
-            if value is None:
-                continue
-            rows.append(
-                {"indicator": indicator, "sex": "T", "time_period": year, "obs_value": value, "obs_flag": flag, "unit": unit}
-            )
-    return rows
-
-
-# Long format, one row per year. No sex breakdown in this table.
-
-MARRIAGE_DIVORCE_TABLE = "Number of marriages, crude marriage rate, number of divorces and crude divorce rate"
-MARRIAGE_DIVORCE_DATAFLOW_ID = "PRESS_MARRIAGE_DIVORCE_HEADLINE"
-MARRIAGE_DIVORCE_COLUMNS = {
-    1: ("NUMBER_OF_MARRIAGES", "PERSONS"),
-    2: ("CRUDE_MARRIAGE_RATE", "PER_1000"),
-    3: ("NUMBER_OF_DIVORCES", "PERSONS"),
-    4: ("CRUDE_DIVORCE_RATE", "PER_1000"),
-}
-
-
-def parse_marriage_divorce_table(df: pd.DataFrame) -> list[dict]:
-    rows = []
-    for _, r in df.iterrows():
-        year, flag = _clean_year(r[0])
-        if year is None:
-            continue
-        for col, (indicator, unit) in MARRIAGE_DIVORCE_COLUMNS.items():
-            value = _to_float(r[col])
-            if value is None:
-                continue
-            rows.append(
-                {"indicator": indicator, "sex": "T", "time_period": year, "obs_value": value, "obs_flag": flag, "unit": unit}
-            )
     return rows
 
 
@@ -360,30 +335,6 @@ def parse_healthy_life_years_table(df: pd.DataFrame) -> list[dict]:
     return rows
 
 
-# Age-specific fertility rate -- long format, one row per year, 7 age-band
-# columns (15-19 .. 45-49). No sex breakdown (rate is per woman).
-
-ASFR_TABLE = "Age specific fertility rates"
-ASFR_DATAFLOW_ID = "PRESS_ASFR"
-ASFR_AGE_COLUMNS = {1: "Y15T19", 2: "Y20T24", 3: "Y25T29", 4: "Y30T34", 5: "Y35T39", 6: "Y40T44", 7: "Y45T49"}
-
-
-def parse_asfr_table(df: pd.DataFrame) -> list[dict]:
-    rows = []
-    for _, r in df.iterrows():
-        year, flag = _clean_year(r[0])
-        if year is None:
-            continue
-        for col, age_code in ASFR_AGE_COLUMNS.items():
-            value = _to_float(r[col])
-            if value is None:
-                continue
-            rows.append(
-                {"indicator": "ASFR", "sex": "T", "age": age_code, "time_period": year, "obs_value": value, "obs_flag": flag, "unit": "PER_1000"}
-            )
-    return rows
-
-
 # Mean age at first marriage, by sex -- national only, extracted from the
 # "Türkiye" row of the provincial table (no separate national-only table
 # exists for this figure). No combined-sex column exists in the source
@@ -437,7 +388,7 @@ TARGETS = [
 ]
 
 # (theme_title, table_title) pairs already parsed above, read by
-# press_table_inventory.py to exclude them from candidate discovery.
+# inventory.py to exclude them from candidate discovery.
 COVERED_TABLES = {(theme, table) for theme, table, _, _ in TARGETS}
 
 
