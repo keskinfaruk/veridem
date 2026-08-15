@@ -33,7 +33,12 @@ on:
     # abolished DST in 2016, so this needs no seasonal adjustment). TurkStat
     # publishes at 10:00 TRT, so this is a 30-minute buffer after it.
     - cron: "30 7 * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      reset_feed:
+        description: "Empty changes.xml before syncing (starts the channel over)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -86,6 +91,13 @@ jobs:
           from feed import seed_from_published
           print('seeded' if seed_from_published(Path('../webpage')) else 'nothing to seed')
           "
+
+      # Manual only, and deliberately after seeding so it discards the published
+      # history rather than a fresh empty file.
+      - name: Reset changes feed
+        if: inputs.reset_feed
+        working-directory: src
+        run: python -c "from feed import reset; print('emptied', reset())"
 
       - name: Run daily fetch and diff
         id: run
@@ -145,30 +157,6 @@ jobs:
             gh issue create --title "$TITLE" --body-file CANDIDATE_INDICATORS.md
           fi
 
-      - name: Post next baseline notice (one-time backfill queue)
-        id: baseline
-        working-directory: src
-        env:
-          BLUESKY_DATA_HANDLE: ${{ secrets.BLUESKY_DATA_HANDLE }}
-          BLUESKY_DATA_APP_PASSWORD: ${{ secrets.BLUESKY_DATA_APP_PASSWORD }}
-        run: python post_baseline_notice.py ../webpage
-
       - name: Sync changes feed to faruk.page
-        if: steps.run.outputs.has_tr_notice == 'true' || steps.baseline.outputs.posted_baseline == 'true'
         working-directory: src
         run: python sync_webpage.py ../webpage
-
-      # Records which entry was posted and any newly-queued series. Direct
-      # commit to main, no PR, bookkeeping only.
-      - name: Commit baseline queue progress
-        if: steps.baseline.outputs.queue_updated == 'true'
-        run: |
-          git config user.name "veridem-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add data/baseline_notices_queue.json
-          if git diff --cached --quiet; then
-            echo "Nothing staged -- skipping commit."
-          else
-            git commit -m "Baseline notice: mark next entry posted"
-            git push
-          fi

@@ -76,7 +76,11 @@ def append_notices(notices: list[dict], path: Path | None = None) -> Path:
     path = path or FEED_PATH
     existing = _load_existing_entries(path)
     new_entries = [_build_entry(n) for n in notices]
+    _write_feed((new_entries + existing)[:MAX_ENTRIES], path)
+    return path
 
+
+def _write_feed(entries: list[ET.Element], path: Path) -> None:
     root = ET.Element(_tag("feed"))
     ET.SubElement(root, _tag("title")).text = "veridem — instant change notices (Türkiye)"
     ET.SubElement(root, _tag("id")).text = FEED_URL
@@ -93,13 +97,12 @@ def append_notices(notices: list[dict], path: Path | None = None) -> Path:
         "interpretation. See the veridem blog for narrative and context."
     )
 
-    for entry in (new_entries + existing)[:MAX_ENTRIES]:
+    for entry in entries:
         root.append(entry)
 
     tree = ET.ElementTree(root)
     ET.indent(tree, space="  ")
     tree.write(path, encoding="UTF-8", xml_declaration=True)
-    return path
 
 
 def seed_from_published(webpage_repo: Path, path: Path | None = None) -> bool:
@@ -120,3 +123,14 @@ def seed_from_published(webpage_repo: Path, path: Path | None = None) -> bool:
         return False
     shutil.copy(src, path)
     return True
+
+
+def reset(path: Path | None = None) -> Path:
+    """Write an empty feed, discarding every existing entry.
+
+    Only for deliberately starting the channel over. The daily run never calls
+    this; it is reachable through the workflow's `reset_feed` input.
+    """
+    path = path or FEED_PATH
+    _write_feed([], path)
+    return path

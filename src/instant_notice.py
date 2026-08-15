@@ -23,6 +23,7 @@ import re
 
 import pandas as pd
 
+from curated import curated_keys
 from report import (
     REF_AREA_LABELS,
     _prior_point,
@@ -52,41 +53,19 @@ RECENT_WINDOW_YEARS = 10
 # shows the full picture.
 MAX_AUTO_POST_WITHDRAWALS = 10
 
-# Which change classes get an instant notice. NEW_SERIES is excluded: a
-# series debuting with its whole fetched history is either backfill noise or
-# simply the start of tracking something already available, and the data
-# alone cannot tell those apart from a genuine new publication. WITHDRAWN is
-# rare and notable enough to keep.
-NOTICE_CLASSES = {"NEW_PERIOD", "REVISED", "WITHDRAWN"}
-
-# Curated per-release subset for source == 'tuik_press': one TurkStat press
-# release can flip ~10-26 series at once, and posting each separately would
-# be a burst rather than the steady one-fact-at-a-time cadence this channel
-# keeps. Everything outside this set stays in the data bank and
-# CHANGE_REPORT.md without posting.
+# Which change classes get an instant notice.
 #
-# ASFR and HEALTHY_LIFE_YEARS are deliberately absent: both split across
-# several age groups with no single national figure, and
-# filter_posting_sources() matches on (indicator, sex) only, so curating
-# either would make every age group separately eligible.
-CURATED_PRESS_INDICATORS = {
-    ("TFR", "T"),                          # Birth Statistics headline
-    ("ADOLESCENT_FERTILITY_RATE", "T"),
-    ("CBR", "T"),
-    ("MEAN_AGE_CHILDBEARING", "T"),
-    ("MEAN_AGE_FIRST_BIRTH", "T"),
-    ("CDR", "T"),                          # Death and Causes of Death headline
-    ("INFANT_MORTALITY_RATE", "T"),
-    ("UNDER5_MORTALITY_RATE", "T"),
-    ("INTERNAL_MIGRATION_RATE", "T"),      # Internal Migration headline
-    ("TOTAL_POPULATION", "T"),             # ABPRS headline
-    ("CRUDE_MARRIAGE_RATE", "T"),          # Marriage and Divorce headline
-    ("CRUDE_DIVORCE_RATE", "T"),
-    ("MEAN_AGE_FIRST_MARRIAGE", "M"),      # no combined-sex figure exists in
-    ("MEAN_AGE_FIRST_MARRIAGE", "F"),      # the source table, so both post
-    ("IMMIGRANTS", "T"),                   # International Migration headline
-    ("EMIGRANTS", "T"),
-}
+# NEW_PERIOD is a new year's figure and REVISED is a restated one; both are
+# real publications and both post.
+#
+# WITHDRAWN never posts. A value disappearing is not a demographic fact worth
+# announcing, and a false one would be a public claim that an institute
+# retracted something it did not. It still reaches the change report.
+#
+# NEW_SERIES never posts either: a series debuting with its whole history is
+# backfill, or simply the start of tracking something already available, and
+# the data alone cannot tell those apart from a genuine new publication.
+NOTICE_CLASSES = {"NEW_PERIOD", "REVISED"}
 
 # Stated inline only when a series actually carries a breakdown; omitted for
 # the common sex='T' case.
@@ -105,20 +84,17 @@ def filter_turkiye(changes: pd.DataFrame) -> pd.DataFrame:
     return changes[(changes["ref_area"] == "TR") & (changes["change_class"].isin(NOTICE_CLASSES))]
 
 
-def filter_posting_sources(changes: pd.DataFrame) -> pd.DataFrame:
-    """Second gate, applied after filter_turkiye().
-
-    source == 'tuik' (SDMX) never posts: tuik_press carries the same
-    indicators sooner, so SDMX is fetched and stored for the archive only.
-    source == 'tuik_press' is restricted to CURATED_PRESS_INDICATORS. Every
-    other source (eurostat) passes through unrestricted.
-    """
+def filter_curated(changes: pd.DataFrame, keys: set | None = None) -> pd.DataFrame:
+    """Second gate, applied after filter_turkiye(): only series on the curated
+    list may post. One list drives both this and the website card set, so the
+    two channels can never disagree about what is publishable."""
     if changes.empty:
         return changes
-    is_tuik_sdmx = changes["source"] == "tuik"
-    is_press = changes["source"] == "tuik_press"
-    press_allowed = changes.apply(lambda r: (r["indicator"], r["sex"]) in CURATED_PRESS_INDICATORS, axis=1)
-    return changes[~is_tuik_sdmx & (~is_press | press_allowed)]
+    keys = curated_keys() if keys is None else keys
+    allowed = changes.apply(
+        lambda r: (r["source"], r["indicator"], r["sex"], r["age"]) in keys, axis=1
+    )
+    return changes[allowed]
 
 
 def _age_band_label(age: str) -> str | None:
@@ -143,10 +119,16 @@ def area_source_label(row: pd.Series) -> str:
 
 
 def prior_comparison_clause(current_value: float, prior_period: str, prior_value: float, indicator: str) -> str:
+    """Direction is judged on the figures as displayed, not the raw doubles: a
+    move too small to show at the indicator's own precision reads as
+    "unchanged", never as "down ... (-0.0%)"."""
+    now, before = format_number(current_value, indicator), format_number(prior_value, indicator)
+    if now == before:
+        return f"unchanged from {before} in {prior_period}"
     delta = current_value - prior_value
-    trend = "up" if delta > 0 else "down" if delta < 0 else "unchanged"
+    trend = "up" if delta > 0 else "down"
     pct = f" ({delta / prior_value * 100:+.1f}%)" if prior_value else ""
-    return f"{trend} from {format_number(prior_value, indicator)} in {prior_period}{pct}"
+    return f"{trend} from {before} in {prior_period}{pct}"
 
 
 def _is_alltime_extreme(history: pd.Series, current_value: float) -> bool:
@@ -197,9 +179,6 @@ def sanity_flags(indicator: str, value: float, history: pd.Series, is_latest: bo
 def compose_post(lead: str, row: pd.Series, history: pd.Series, url: str | None, include_sanity: bool) -> str:
     """Build a <=300-grapheme post from `lead` plus trend, record, 10-year
     extreme and sanity clauses, each appended only if it still fits.
-
-    Shared by bluesky_text() and baseline_notice.baseline_bluesky_text(),
-    which differ only in their lead sentence.
 
     Bluesky counts graphemes rather than bytes or UTF-16 units. For the plain
     ASCII plus Turkish-letter text produced here (no combining marks, no
@@ -326,7 +305,7 @@ def build_notices(
     dataflow held back by suppress_mass_withdrawals().
     """
     changes, suppressed = suppress_mass_withdrawals(changes)
-    tr_changes = filter_posting_sources(filter_turkiye(changes))
+    tr_changes = filter_curated(filter_turkiye(changes))
     notices = []
     for _, row in tr_changes.iterrows():
         history = _history_for(row, con)

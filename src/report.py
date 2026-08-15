@@ -155,7 +155,7 @@ def area_label(ref_area: str) -> str:
 
 def format_number(value: float, indicator: str, signed: bool = False) -> str:
     """The single place a raw obs_value becomes display text, for this module
-    and for instant_notice.py / baseline_notice.py. `signed` forces a leading
+    and for instant_notice.py / cards.py. `signed` forces a leading
     +/- for the Change line, which reads faster with the sign than without."""
     decimals = INDICATOR_DECIMALS.get(indicator)
     if decimals is None:

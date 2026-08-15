@@ -11,9 +11,16 @@ Web Service, TurkStat's press-release tables, and Eurostat, and writes each
 fetch as an immutable Parquet snapshot. Each fresh snapshot is diffed against
 the previous one and every difference is classified: a new period, a
 revision, a withdrawal, or a new series. A demographic change opens a pull
-request carrying a readable change report; Türkiye figures also go out
-immediately as fact-only notices on an Atom feed and a Bluesky account.
-Nothing publishes without a human merging the pull request.
+request carrying a readable change report, and merging it is what updates the
+data bank.
+
+Published output has two forms, both limited to a curated list of indicators
+for Türkiye (`data/curated_cards.csv`). A new year's figure or a revision to
+one posts a single fact to a Bluesky account and an Atom feed, in order, as
+history. The same figures also appear as a card set on a static page, one
+card per watched series, replaced in place so the page always shows current
+values rather than a growing log. A value disappearing from a source never
+posts anywhere.
 
 Changes are detected by comparing against this project's own stored history,
 never by anything an API declares. A catalogue-level change (TurkStat gaining

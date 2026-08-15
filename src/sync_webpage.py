@@ -1,86 +1,54 @@
 """
-Syncs the instant-notice feed to the public `webpage` repo (faruk.page).
+Syncs veridem's public output to the `webpage` repo (faruk.page).
 
 Two files are updated in a checked-out copy of that repo:
-    veridem/changes.xml   a byte-for-byte copy of feed.py's output
-    veridem/index.html    the human-readable list, regenerated from the same
-                          entries as static HTML, matching the site's
-                          no-build-step approach
+    veridem/changes.xml   a byte-for-byte copy of feed.py's output, the
+                          chronological record of what was posted
+    veridem/index.html    the card set: one entry per watched series, always
+                          showing its current value
 
-Direct commit, no PR: this channel's output is facts only and does not need
-the review gate blog posts do.
+The two behave differently on purpose. The feed and the Bluesky account are
+append-only history; the page is current state, rebuilt whole on every run so
+a card is replaced in place rather than a second one appended.
 
-Meant to run only when daily_run.py produced at least one Turkiye notice.
-Running it with an unchanged feed is harmless but wasteful.
+Only the block between the veridem markers is touched. Everything else on that
+page is hand-maintained and must survive untouched.
+
+Direct commit, no PR: this output is facts only and does not need the review
+gate data changes do.
 """
 
-import html
 import re
 import shutil
 import subprocess
 import sys
-import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from feed import ATOM_NS, FEED_PATH, MAX_ENTRIES
+from cards import REGION_END, REGION_START, build_cards, render_region
+from feed import FEED_PATH
+from schema import connect
 
-# Bounded by the same limit as the feed itself, so every indicator stays
-# accessible on the page rather than dropping off a second, tighter cap.
-MAX_LISTED = MAX_ENTRIES
-LIST_START = '<ul class="post-list" id="updates-list">'
-LIST_END = "</ul>"
-EMPTY_NOTE_RE = re.compile(r'<p class="text-muted" id="empty-note">.*?</p>\n?', re.DOTALL)
-
-
-def _tag(name: str) -> str:
-    return f"{{{ATOM_NS}}}{name}"
+# The block this script owns. On the first run the markers do not exist yet,
+# so the original hand-written list is replaced by the marked region once.
+REGION_RE = re.compile(re.escape(REGION_START) + r".*?" + re.escape(REGION_END), re.DOTALL)
+LEGACY_LIST_RE = re.compile(r'<ul class="post-list" id="updates-list">.*?</ul>', re.DOTALL)
 
 
-def _read_entries(feed_path: Path) -> list[dict]:
-    """
-    `text` reads <summary> (bluesky_text) rather than <title>, so the page
-    matches the Bluesky post's detail; bluesky_text already contains the title
-    as its prefix, so nothing is lost.
-    """
-    root = ET.parse(feed_path).getroot()
-    entries = []
-    for entry in root.findall(_tag("entry")):
-        entries.append(
-            {
-                "text": entry.find(_tag("summary")).text,
-                "date": (entry.find(_tag("updated")).text or "")[:10],
-            }
-        )
-    return entries
-
-
-def _render_list_html(entries: list[dict]) -> str:
-    items = []
-    for e in entries[:MAX_LISTED]:
-        items.append(
-            f'\t\t<li>\n\t\t\t<time datetime="{e["date"]}">{e["date"]}</time>\n'
-            f'\t\t\t<span>{html.escape(e["text"])}</span>\n\t\t</li>'
-        )
-    marker = (
-        "\t\t<!-- Synced automatically from veridem's daily run -- newest first. "
-        "See changes.xml for the machine-readable version. -->"
-    )
-    return "\n".join(items + [marker])
-
-
-def update_index_html(index_path: Path, entries: list[dict]) -> None:
+def update_index_html(index_path: Path, region: str) -> bool:
+    """Swap the managed block for `region`. Returns False when the page has
+    neither the markers nor the original list, which means it changed shape
+    and needs a look rather than a silent no-op."""
     page = index_path.read_text(encoding="utf-8")
 
-    start = page.index(LIST_START) + len(LIST_START)
-    end = page.index(LIST_END, start)
-    page = page[:start] + "\n" + _render_list_html(entries) + "\n\t" + page[end:]
+    if REGION_RE.search(page):
+        updated = REGION_RE.sub(lambda _: region, page, count=1)
+    elif LEGACY_LIST_RE.search(page):
+        updated = LEGACY_LIST_RE.sub(lambda _: region, page, count=1)
+    else:
+        return False
 
-    # The "no updates yet" placeholder only makes sense while the list is
-    # empty; remove it once there is real content.
-    if entries:
-        page = EMPTY_NOTE_RE.sub("", page)
-
-    index_path.write_text(page, encoding="utf-8")
+    index_path.write_text(updated, encoding="utf-8")
+    return True
 
 
 def _run(cmd: list[str], cwd: Path) -> None:
@@ -88,25 +56,29 @@ def _run(cmd: list[str], cwd: Path) -> None:
 
 
 def sync(webpage_repo: Path) -> bool:
-    """True if there was something to commit, False if the sync left the
-    webpage working tree unchanged."""
+    """Returns True if there was something to commit, False if the sync left
+    the webpage working tree unchanged."""
     target_dir = webpage_repo / "veridem"
     target_dir.mkdir(exist_ok=True)
 
-    shutil.copy(FEED_PATH, target_dir / "changes.xml")
-    entries = _read_entries(FEED_PATH)
-    update_index_html(target_dir / "index.html", entries)
+    if FEED_PATH.exists():
+        shutil.copy(FEED_PATH, target_dir / "changes.xml")
+
+    cards = build_cards(connect())
+    if not update_index_html(target_dir / "index.html", render_region(cards)):
+        raise RuntimeError(
+            f"{target_dir / 'index.html'} has neither the veridem markers nor the original "
+            "updates list -- refusing to guess where the card block belongs"
+        )
+    print(f"Rendered {len(cards)} card(s) into veridem/index.html")
 
     _run(["git", "add", "veridem/changes.xml", "veridem/index.html"], webpage_repo)
-    diff = subprocess.run(
-        ["git", "diff", "--cached", "--quiet"], cwd=webpage_repo
-    )
-    if diff.returncode == 0:
-        return False  # nothing actually changed
+    if subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=webpage_repo).returncode == 0:
+        return False
 
     _run(["git", "config", "user.name", "veridem-bot"], webpage_repo)
     _run(["git", "config", "user.email", "actions@users.noreply.github.com"], webpage_repo)
-    _run(["git", "commit", "-m", "Update veridem changes feed"], webpage_repo)
+    _run(["git", "commit", "-m", "Update veridem feed and cards"], webpage_repo)
     _run(["git", "push"], webpage_repo)
     return True
 
@@ -115,11 +87,7 @@ def main() -> int:
     if len(sys.argv) != 2:
         print("usage: sync_webpage.py <path to checked-out webpage repo>", file=sys.stderr)
         return 1
-    webpage_repo = Path(sys.argv[1])
-    if not FEED_PATH.exists():
-        print(f"{FEED_PATH} doesn't exist -- nothing to sync", file=sys.stderr)
-        return 1
-    changed = sync(webpage_repo)
+    changed = sync(Path(sys.argv[1]))
     print("Synced, pushed." if changed else "No change -- nothing to push.")
     return 0
 
