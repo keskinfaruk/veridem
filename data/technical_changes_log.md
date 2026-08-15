@@ -243,3 +243,30 @@
 - NEW PRESS THEME: World Population Day -- Population and Demography
 - NEW PRESS THEME: Young People on the Labour Market -- Employment, Unemployment and Wages
 - NEW PRESS THEME: Youth in Statistics -- Population and Demography
+
+## 2026-08-15
+
+### Withdrawn dataflows (22)
+
+- DATAFLOW WITHDRAWN: DF_DOGUM -- Births by mother's Age Group and Mother's Educational Level (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_ANNEMEDENI -- Births by Province and Legal Marital Status of Mother (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_ANNEYASGR -- Births by Age Group of Mother (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_ANNEYASGR_BOLGE -- Births by Provinces and Age Group of Mother and Regions (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_ANNEYAS_ULKE -- Births by Mother's Age Group and Country of Birth (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_ANNE_ORTYAS -- Mean Age of Mother by Provinces (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_ANNE_UYRUK -- Births by Citizenship of Mother (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_AY -- Births by Months (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_BABAYASGR -- Births by Province and Age Group of Father (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_BABA_UYRUK -- Births by Citizenship of Father (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_COGUL -- Multiple Births (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_DOGARA_ORTSURE_ANNEYASGR -- The Average Duration Between the Mother's Last Two Births by Age Group of Mother (Year) (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_EGT_YASGR -- Births by Mother's Age Group and Birth Order (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_EVLSURE -- Births by Provinces and Mother's Duration of Marriage (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_GDH -- General Fertility Rate by Provinces (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_IL_TDH -- Total Fertility Rate by Provinces (Number of Children) (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_IL_YASA_OZEL_DOGHIZ -- Age Specific Fertility Rate by Provinces (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_KDH -- Crude Birth Rate by Provinces (‰) (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_ORTYAS_ILKDOG -- Mean Age of Mother at Birth of First Child by Provinces (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_SIRA -- Proportion of Births by Birth Order (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_TEMEL_DOG_GOST -- Basic Fertility Indicators (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOGUM_YASA_OZEL_DOGHIZ -- Age Specific Fertility Rates (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
