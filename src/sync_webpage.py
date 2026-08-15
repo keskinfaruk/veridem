@@ -36,6 +36,26 @@ PROJECTS_PAGE = "projects.html"
 OLD_LINK = "./veridem/index.html"
 NEW_LINK = "./veridem/indicators.html"
 
+# /veridem/ points at the project's own site. Static hosting cannot issue a
+# 301, so this is a meta refresh with a canonical link for search engines and
+# a visible fallback for anyone whose browser blocks the refresh.
+REDIRECT_PAGE = "veridem/index.html"
+REDIRECT_TARGET = "https://veridem.faruk.page/"
+REDIRECT_HTML = f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>veridem</title>
+<link rel="canonical" href="{REDIRECT_TARGET}">
+<meta http-equiv="refresh" content="0; url={REDIRECT_TARGET}">
+<meta name="robots" content="noindex">
+</head>
+<body>
+<p>Redirecting to <a href="{REDIRECT_TARGET}">veridem.faruk.page</a>.</p>
+</body>
+</html>
+"""
+
 PAGE_TITLE = "Indicators &mdash; Faruk Keskin"
 PAGE_DESCRIPTION = (
     "Current values for some demographic indicators veridem watches for Türkiye, "
@@ -79,6 +99,19 @@ def repoint_links(webpage_repo: Path) -> bool:
     return True
 
 
+def ensure_redirect(webpage_repo: Path) -> bool:
+    """Put the redirect at /veridem/ if nothing is there. Written once and
+    never rewritten, so a hand-edited landing page replacing it is safe.
+
+    Must run after migrate_page(), which frees that filename."""
+    path = webpage_repo / REDIRECT_PAGE
+    if path.exists():
+        return False
+    path.write_text(REDIRECT_HTML, encoding="utf-8")
+    print(f"Wrote {REDIRECT_PAGE} redirecting to {REDIRECT_TARGET}")
+    return True
+
+
 def update_page(page_path: Path, region: str) -> bool:
     """Swap the managed block for `region`, and keep the page title and
     description in step with it. Returns False when the page has neither the
@@ -107,6 +140,7 @@ def sync(webpage_repo: Path) -> bool:
     the webpage working tree unchanged."""
     (webpage_repo / "veridem").mkdir(exist_ok=True)
     migrate_page(webpage_repo)
+    ensure_redirect(webpage_repo)
     repoint_links(webpage_repo)
 
     if FEED_PATH.exists():
