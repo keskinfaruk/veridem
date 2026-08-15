@@ -43,9 +43,18 @@ def _load_map() -> pd.DataFrame:
     return imap[imap["source"] == "tuik"]
 
 
-def fetch_indicator(row: pd.Series, token: str) -> pd.DataFrame:
+def fetch_indicator(row: pd.Series, token: str, snapshot_id: str) -> pd.DataFrame:
     """Fetch and normalize one indicator_map row's full series (all periods,
-    all values of its age/sex breakdown dimension if any)."""
+    all values of its age/sex breakdown dimension if any).
+
+    `snapshot_id` is supplied by the caller, not generated here: several
+    indicator_map rows can share one dataflow_id (TUIK bundles multiple
+    indicators into a single dataflow), and every row for the same
+    dataflow_id in one fetch run must land in the same snapshot -- see
+    main()'s grouping. A snapshot_id generated per row here would give
+    diff.py's latest_two_snapshots() (keyed on dataflow_id alone) two
+    same-day snapshots to compare instead of today vs. yesterday.
+    """
     dataflow_id = row["dataflow_id"]
     version = row["version"]
     indicator_code = row["source_indicator_code"]
@@ -59,7 +68,6 @@ def fetch_indicator(row: pd.Series, token: str) -> pd.DataFrame:
     resp = fetch_data(AGENCY, dataflow_id, version, key, token)
     root = ET.fromstring(resp.content)
 
-    snapshot_id = f"tuik_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
     retrieved_at = datetime.now(timezone.utc)
     known = {"REF_AREA", "FREQ", "INDICATOR"} | {d for d in (age_dim, sex_dim) if d}
 
@@ -106,26 +114,47 @@ def main() -> int:
     imap = _load_map()
     token = get_access_token()
 
-    for _, row in imap.iterrows():
-        label = f"{row['indicator']} ({row['dataflow_id']}, indicator={row['source_indicator_code']})"
-        print(f"Fetching {label}...")
-        try:
-            df = fetch_indicator(row, token)
-        except requests.exceptions.HTTPError as e:
-            if e.response is not None and e.response.status_code == 404:
-                # The dataflow itself is gone from TUIK's catalogue, not a
-                # transient error -- dataflow_inventory.py's daily diff
-                # already catches and reports this as DATAFLOW_WITHDRAWN
-                # (see report.py). Skip this row rather than take the whole
-                # fetch down; nothing to retry here.
-                print(f"  WARNING: {row['dataflow_id']} returned 404 -- dataflow no longer exists, skipping")
-                continue
-            raise
+    # Grouped by dataflow_id, not iterated row by row: several indicator_map
+    # rows can share one dataflow_id (see fetch_indicator()'s docstring), and
+    # every one of them has to land in the same snapshot file.
+    for dataflow_id, group in imap.groupby("dataflow_id", sort=False):
+        snapshot_id = f"tuik_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
+        frames = []
+        withdrawn = False
+        for _, row in group.iterrows():
+            label = f"{row['indicator']} ({dataflow_id}, indicator={row['source_indicator_code']})"
+            print(f"Fetching {label}...")
+            try:
+                frames.append(fetch_indicator(row, token, snapshot_id))
+            except requests.exceptions.HTTPError as e:
+                if e.response is not None and e.response.status_code == 404:
+                    # The dataflow itself is gone from TUIK's catalogue, not a
+                    # transient error -- dataflow_inventory.py's daily diff
+                    # already catches and reports this as DATAFLOW_WITHDRAWN
+                    # (see report.py). Skip the whole group rather than write
+                    # a partial snapshot for it.
+                    print(f"  WARNING: {dataflow_id} returned 404 -- dataflow no longer exists, skipping")
+                    withdrawn = True
+                    break
+                if e.response is not None and e.response.status_code == 401:
+                    # The token (fetched once at the top of main()) expired
+                    # mid-run -- the indicator_map has grown enough that a
+                    # full run can now outlast it. Refresh once and retry
+                    # this row rather than losing the whole run.
+                    print("  token expired, refreshing and retrying...")
+                    token = get_access_token()
+                    frames.append(fetch_indicator(row, token, snapshot_id))
+                    continue
+                raise
+        if withdrawn:
+            continue
+
+        df = pd.concat(frames, ignore_index=True)
         if df.empty:
             print("  WARNING: no observations returned -- skipping snapshot")
             continue
-        df = df.sort_values(["age", "sex", "time_period"]).reset_index(drop=True)
-        out_path = write_snapshot(df, "tuik", row["dataflow_id"], snapshot_id=df.attrs["snapshot_id"])
+        df = df.sort_values(["indicator", "age", "sex", "time_period"]).reset_index(drop=True)
+        out_path = write_snapshot(df, "tuik", dataflow_id, snapshot_id=snapshot_id)
         print(f"  saved {len(df)} observations to {out_path}")
 
     return 0
