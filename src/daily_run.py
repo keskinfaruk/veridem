@@ -18,6 +18,7 @@ GitHub's own failure email are the notification, with no separate channel.
 import os
 import sys
 import traceback
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -72,37 +73,31 @@ def _observation_snapshot_path(dataflow_id: str, snapshot_id: str) -> Path | Non
     return matches[0] if matches else None
 
 
-def _withdrawn_tuik_dataflow_ids(con) -> set[str]:
-    """TUIK dataflow_ids with observations on record but absent from the
-    latest catalogue snapshot, i.e. TUIK withdrew them.
+def _refreshed_this_run(con, since: datetime) -> set[tuple[str, str]]:
+    """(source, dataflow_id) whose newest snapshot was written during this run.
 
-    Without this exclusion, diff_observations() would re-classify the one
-    remaining historical snapshot as a brand-new NEW_SERIES every run
-    (old_id stays None forever), since these are never fetched again.
+    Everything else is left alone. A dataflow that was not fetched, because
+    TUIK withdrew it or because the SDMX budget ran out, still has its last
+    snapshot on record; diffing that against nothing would re-report the whole
+    series as a NEW_SERIES debut every single day.
     """
-    _, latest_inv_id = inventory.latest_two(con, inventory.CATALOGUES["tuik_dataflows"])
-    if latest_inv_id is None:
-        return set()
-    current = set(
-        con.execute(
-            "SELECT DISTINCT dataflow_id FROM dataflow_inventory WHERE snapshot_id = ?", [latest_inv_id]
-        ).df()["dataflow_id"]
-    )
-    ever_fetched = set(
-        con.execute("SELECT DISTINCT dataflow_id FROM observations WHERE source = 'tuik'").df()["dataflow_id"]
-    )
-    return ever_fetched - current
+    df = con.execute(
+        "SELECT source, dataflow_id, max(retrieved_at) AS latest "
+        "FROM observations GROUP BY source, dataflow_id"
+    ).df()
+    fresh = df[df["latest"] >= pd.Timestamp(since).tz_localize(None)]
+    return set(map(tuple, fresh[["source", "dataflow_id"]].values))
 
 
-def _prune_observations(con) -> pd.DataFrame:
-    """Diff every dataflow's fresh snapshot against its previous one. Delete
-    the fresh file where nothing changed; keep it where something did."""
-    withdrawn = _withdrawn_tuik_dataflow_ids(con)
+def _prune_observations(con, since: datetime) -> pd.DataFrame:
+    """Diff every dataflow refreshed this run against its previous snapshot.
+    Delete the fresh file where nothing changed; keep it where something did."""
+    refreshed = _refreshed_this_run(con, since)
     changes = []
 
     for _, row in con.execute("SELECT DISTINCT source, dataflow_id FROM observations").df().iterrows():
         source, dataflow_id = row["source"], row["dataflow_id"]
-        if source == "tuik" and dataflow_id in withdrawn:
+        if (source, dataflow_id) not in refreshed:
             continue
         # old_id may be None (first-ever fetch), which diff_observations
         # correctly treats as a NEW_SERIES debut. new_id is never None: this
@@ -232,11 +227,12 @@ def _write_github_outputs(**flags: bool) -> None:
 
 
 def main() -> int:
+    run_started = datetime.now(timezone.utc)
     errors = _run_fetchers()
 
     print("\n=== Diffing fresh snapshots against prior ones ===")
     con = connect()
-    obs_changes = _prune_observations(con)
+    obs_changes = _prune_observations(con, run_started)
     catalogue_changes = _prune_catalogues(con)
 
     con = connect()  # fresh connection: some snapshot files were just deleted

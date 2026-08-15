@@ -118,7 +118,7 @@ jobs:
       # custom-built one.
 
       - name: Open or update PR
-        if: steps.run.outputs.has_changes == 'true'
+        if: "!cancelled() && steps.run.outputs.has_changes == 'true'"
         uses: peter-evans/create-pull-request@v6
         with:
           title: "Data update"
@@ -133,7 +133,7 @@ jobs:
       # has_new_candidates so a candidate snapshot with no other catalogue
       # change still gets committed.
       - name: Commit technical changes log
-        if: steps.run.outputs.has_technical_changes == 'true' || steps.run.outputs.has_new_candidates == 'true'
+        if: "!cancelled() && (steps.run.outputs.has_technical_changes == 'true' || steps.run.outputs.has_new_candidates == 'true')"
         run: |
           git config user.name "veridem-bot"
           git config user.email "actions@users.noreply.github.com"
@@ -148,7 +148,7 @@ jobs:
       # One persistent issue, commented on each time new candidates appear,
       # rather than a new issue every run.
       - name: Open or comment on candidate-indicators issue
-        if: steps.run.outputs.has_new_candidates == 'true'
+        if: "!cancelled() && steps.run.outputs.has_new_candidates == 'true'"
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -161,6 +161,10 @@ jobs:
             gh issue create --title "$TITLE" --body-file CANDIDATE_INDICATORS.md
           fi
 
+      # Runs even when the fetch step reported a partial failure. One slow
+      # source must not stop the sources that did work from publishing, which
+      # is the whole point of the per-source budget in fetch_tuik_indicators.
       - name: Sync changes feed to faruk.page
+        if: "!cancelled()"
         working-directory: src
         run: python sync_webpage.py ../webpage
