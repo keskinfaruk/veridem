@@ -54,12 +54,17 @@ changed. *veri* (data) + *demografi*.
 
 ## Data currently in the bank
 
-**TurkStat SDMX — Türkiye, national:**
-- Total fertility rate (TFR), age-specific fertility rate (ASFR)
-- Mean age of mother at childbearing
-- Crude birth rate
-- Mean age at first marriage (by sex) — TurkStat withdrew this dataflow
-  from its SDMX service; historical data stays in the bank, no longer updates
+**TurkStat SDMX, Türkiye, national, 22 indicators as of 2026-08-15,
+archival only** (fetched and stored for the revision-history record;
+`tuik_press` below is the sole public-posting source for TurkStat data):
+- Fertility: total fertility rate (TFR), age-specific fertility rate (ASFR),
+  general fertility rate, crude birth rate, total live births, adolescent
+  fertility rate, mean age at childbearing, mean age at first birth,
+  births by mother's/father's age group
+- Marriage & divorce: crude marriage/divorce rate, number of
+  marriages/divorces, mean age at marriage, mean age at first marriage
+  (by sex), marriage rate among the 16–17 age group (by sex), cousin
+  marriage rate and count, divorce custody outcomes
 
 **TurkStat press releases — Türkiye, national:**
 - Total live births, adolescent fertility rate, mean age at first birth
