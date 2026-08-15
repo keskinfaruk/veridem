@@ -31,11 +31,10 @@ FREQ = "A"
 
 # Wall-clock budget for the whole SDMX pass. TUIK's service intermittently
 # accepts a request and then answers slowly or not at all, and per-request
-# timeouts alone cannot bound a run across 14 dataflows. This source is
-# archival: nothing on the curated list comes from it, so a slow day here must
-# not delay the sources that do publish. Whatever is unfetched is simply
-# picked up tomorrow, since every fetch pulls full history anyway.
-BUDGET_SECONDS = 10 * 60
+# timeouts alone cannot bound a run across 14 dataflows. This pass runs weekly
+# and has the job largely to itself, so the budget is generous. Whatever is
+# unfetched is picked up next time, since every fetch pulls full history.
+BUDGET_SECONDS = 25 * 60
 
 INDICATOR_MAP_PATH = Path(__file__).resolve().parent.parent / "data" / "indicator_map.csv"
 

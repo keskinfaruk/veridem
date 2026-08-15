@@ -23,6 +23,10 @@ name: Daily data refresh
 #     and approve pull requests" checkbox. Both are needed for the PR step
 #     to succeed with the default GITHUB_TOKEN
 #
+# The TurkStat SDMX pass runs on Sundays only (see daily_run.py). It is
+# archival, publishes nothing, and answers slowly enough to dominate the run.
+# Use the fetch_sdmx input to force it on any day.
+#
 # The press connector needs no secret (the press API takes no auth, only an
 # X-Requested-With header) but does need `xlrd` in requirements.txt to read
 # the .xls tables it returns. Do not drop that dependency.
@@ -37,6 +41,10 @@ on:
     inputs:
       reset_feed:
         description: "Empty changes.xml before syncing (starts the channel over)"
+        type: boolean
+        default: false
+      fetch_sdmx:
+        description: "Also fetch the TurkStat SDMX archive (normally Sundays only)"
         type: boolean
         default: false
 
@@ -107,6 +115,7 @@ jobs:
           # Without this Python buffers stdout (the step is not a tty) and a
           # step that gets killed logs nothing at all about where it was.
           PYTHONUNBUFFERED: "1"
+          VERIDEM_FETCH_SDMX: ${{ inputs.fetch_sdmx && '1' || '' }}
           TUIK_API_KEY: ${{ secrets.TUIK_API_KEY }}
           BLUESKY_DATA_HANDLE: ${{ secrets.BLUESKY_DATA_HANDLE }}
           BLUESKY_DATA_APP_PASSWORD: ${{ secrets.BLUESKY_DATA_APP_PASSWORD }}

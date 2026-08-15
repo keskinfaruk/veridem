@@ -45,12 +45,29 @@ CANDIDATE_REPORT_PATH = REPO_ROOT / candidate_indicators.CANDIDATE_REPORT_PATH_N
 # template change needed then.
 DASHBOARD_URL = "https://veridem.faruk.page/"
 
+# The TUIK SDMX pass is archival: nothing on the curated list comes from it and
+# it runs about a year behind the press releases, yet it costs roughly thirteen
+# minutes of a fourteen minute run because the service answers slowly. It
+# refreshes weekly instead, leaving the daily run to the sources that publish.
+# Monday is 0, so 6 is Sunday. VERIDEM_FETCH_SDMX=1 forces it on any day.
+SDMX_WEEKDAY = 6
 
-def _run_fetchers() -> list[str]:
-    """Run every fetcher, collecting error messages without letting one
-    source's failure stop the others from running."""
-    steps = [
-        ("TUIK indicators", fetch_tuik_indicators.main),
+
+def _should_fetch_sdmx(today: datetime) -> bool:
+    if os.environ.get("VERIDEM_FETCH_SDMX") == "1":
+        return True
+    return today.weekday() == SDMX_WEEKDAY
+
+
+def _run_fetchers(today: datetime) -> list[str]:
+    """Run every fetcher due today, collecting error messages without letting
+    one source's failure stop the others from running."""
+    steps = []
+    if _should_fetch_sdmx(today):
+        steps.append(("TUIK indicators", fetch_tuik_indicators.main))
+    else:
+        print("\n=== TUIK indicators === skipped: archival, refreshes weekly")
+    steps += [
         ("Eurostat indicators", fetch_eurostat_indicators.main),
         ("TUIK press indicators", fetch_tuik_press_indicators.main),
     ]
@@ -228,7 +245,7 @@ def _write_github_outputs(**flags: bool) -> None:
 
 def main() -> int:
     run_started = datetime.now(timezone.utc)
-    errors = _run_fetchers()
+    errors = _run_fetchers(run_started)
 
     print("\n=== Diffing fresh snapshots against prior ones ===")
     con = connect()
