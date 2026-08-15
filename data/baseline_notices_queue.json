@@ -55,9 +55,9 @@
     "time_period": "2025",
     "change_class": "BASELINE",
     "snapshot_id": "eurostat_20260809T091130Z",
-    "posted": false,
-    "posted_at": null,
-    "bluesky_uri": null
+    "posted": true,
+    "posted_at": "2026-08-15T07:54:43.200641+00:00",
+    "bluesky_uri": "at://did:plc:t3funjyprhjd7qqhwifxq4oj/app.bsky.feed.post/3mt4722y7sz2r"
   },
   {
     "title": "Current on record -- Crude Divorce Rate (Türkiye, TurkStat press release) 2025: 2.3, up from 2.2 in 2024 (+2.1%)",
