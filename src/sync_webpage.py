@@ -11,8 +11,9 @@ The two behave differently on purpose. The feed and the Bluesky account are
 append-only history; the page is current state, rebuilt whole on every run so
 a card is replaced in place rather than a second one appended.
 
-Only the block between the veridem markers is touched. Everything else on that
-page is hand-maintained and must survive untouched.
+veridem owns the block between its markers inside <main>, plus that page's
+title and description. The site chrome around it is hand-maintained and must
+survive untouched.
 
 Direct commit, no PR: this output is facts only and does not need the review
 gate data changes do.
@@ -28,24 +29,36 @@ from cards import REGION_END, REGION_START, build_cards, render_region
 from feed import FEED_PATH
 from schema import connect
 
-# The block this script owns. On the first run the markers do not exist yet,
-# so the original hand-written list is replaced by the marked region once.
+PAGE_TITLE = "Indicators &mdash; Faruk Keskin"
+PAGE_DESCRIPTION = (
+    "Current values for every demographic indicator veridem watches for Türkiye, "
+    "from TurkStat and Eurostat."
+)
+
 REGION_RE = re.compile(re.escape(REGION_START) + r".*?" + re.escape(REGION_END), re.DOTALL)
-LEGACY_LIST_RE = re.compile(r'<ul class="post-list" id="updates-list">.*?</ul>', re.DOTALL)
+# Before the region grew to cover the heading, veridem owned only the card list.
+# Falling back to the whole <main> body migrates such a page in one pass.
+MAIN_RE = re.compile(r"(<main class=\"wrap\">)(.*?)(</main>)", re.DOTALL)
+TITLE_RE = re.compile(r"<title>.*?</title>", re.DOTALL)
+DESCRIPTION_RE = re.compile(r'(<meta name="description" content=")(.*?)(">)', re.DOTALL)
 
 
 def update_index_html(index_path: Path, region: str) -> bool:
-    """Swap the managed block for `region`. Returns False when the page has
-    neither the markers nor the original list, which means it changed shape
-    and needs a look rather than a silent no-op."""
+    """Swap the managed block for `region`, and keep the page title and
+    description in step with it. Returns False when the page has neither the
+    markers nor a <main class="wrap">, which means it changed shape and needs a
+    look rather than a silent no-op."""
     page = index_path.read_text(encoding="utf-8")
 
     if REGION_RE.search(page):
         updated = REGION_RE.sub(lambda _: region, page, count=1)
-    elif LEGACY_LIST_RE.search(page):
-        updated = LEGACY_LIST_RE.sub(lambda _: region, page, count=1)
+    elif MAIN_RE.search(page):
+        updated = MAIN_RE.sub(lambda m: f"{m.group(1)}\n{region}\n{m.group(3)}", page, count=1)
     else:
         return False
+
+    updated = TITLE_RE.sub(f"<title>{PAGE_TITLE}</title>", updated, count=1)
+    updated = DESCRIPTION_RE.sub(lambda m: m.group(1) + PAGE_DESCRIPTION + m.group(3), updated, count=1)
 
     index_path.write_text(updated, encoding="utf-8")
     return True
@@ -67,8 +80,8 @@ def sync(webpage_repo: Path) -> bool:
     cards = build_cards(connect())
     if not update_index_html(target_dir / "index.html", render_region(cards)):
         raise RuntimeError(
-            f"{target_dir / 'index.html'} has neither the veridem markers nor the original "
-            "updates list -- refusing to guess where the card block belongs"
+            f"{target_dir / 'index.html'} has neither the veridem markers nor a "
+            "<main class=\"wrap\"> -- refusing to guess where the card block belongs"
         )
     print(f"Rendered {len(cards)} card(s) into veridem/index.html")
 
@@ -78,7 +91,7 @@ def sync(webpage_repo: Path) -> bool:
 
     _run(["git", "config", "user.name", "veridem-bot"], webpage_repo)
     _run(["git", "config", "user.email", "actions@users.noreply.github.com"], webpage_repo)
-    _run(["git", "commit", "-m", "Update veridem feed and cards"], webpage_repo)
+    _run(["git", "commit", "-m", "Update veridem indicators and feed"], webpage_repo)
     _run(["git", "push"], webpage_repo)
     return True
 
