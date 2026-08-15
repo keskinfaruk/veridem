@@ -22,6 +22,13 @@ from net import with_retries
 TOKEN_URL = "https://giris.tuik.gov.tr/realms/web/protocol/openid-connect/token"
 BASE_URL = "https://nsiws.tuik.gov.tr/rest"
 
+# TUIK's NSI instance intermittently accepts a data request and then never
+# answers, while healthy responses arrive in well under a second. A generous
+# ceiling therefore buys nothing and only delays the retry, which usually
+# succeeds immediately, so data requests get a short deliberate one.
+DATA_TIMEOUT_SECONDS = 30
+STRUCTURE_TIMEOUT_SECONDS = 60
+
 # SDMX-ML 2.1 namespaces, used throughout for parsing structure/data responses.
 NS = {
     "str": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure",
@@ -64,7 +71,7 @@ def get(path: str, token: str, params: dict | None = None, **kwargs) -> requests
         f"{BASE_URL}/{path.lstrip('/')}",
         headers={"Authorization": f"Bearer {token}"},
         params=params,
-        timeout=kwargs.pop("timeout", 60),
+        timeout=kwargs.pop("timeout", STRUCTURE_TIMEOUT_SECONDS),
         **kwargs,
     )
     resp.raise_for_status()
@@ -95,7 +102,7 @@ def fetch_data(
 
     prepared = requests.Request("GET", url, headers={"Authorization": f"Bearer {token}"}).prepare()
     prepared.url = url  # stop requests from undoing the %2E encoding
-    resp = with_retries(requests.Session().send, prepared, timeout=60)
+    resp = with_retries(requests.Session().send, prepared, timeout=DATA_TIMEOUT_SECONDS)
     resp.raise_for_status()
     return resp
 

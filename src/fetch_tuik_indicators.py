@@ -14,6 +14,7 @@ Verify with a probe fetch before adding a row; never assume a series key's
 shape from a sibling dataflow.
 """
 
+import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
@@ -27,6 +28,14 @@ from tuik_client import NS, build_series_key, fetch_data, get_access_token, get_
 AGENCY = "TR"
 REF_AREA = "TR"
 FREQ = "A"
+
+# Wall-clock budget for the whole SDMX pass. TUIK's service intermittently
+# accepts a request and then answers slowly or not at all, and per-request
+# timeouts alone cannot bound a run across 14 dataflows. This source is
+# archival: nothing on the curated list comes from it, so a slow day here must
+# not delay the sources that do publish. Whatever is unfetched is simply
+# picked up tomorrow, since every fetch pulls full history anyway.
+BUDGET_SECONDS = 10 * 60
 
 INDICATOR_MAP_PATH = Path(__file__).resolve().parent.parent / "data" / "indicator_map.csv"
 
@@ -108,11 +117,16 @@ def fetch_indicator(row: pd.Series, token: str, snapshot_id: str) -> pd.DataFram
 def main() -> int:
     imap = _load_map()
     token = get_access_token()
+    deadline = time.monotonic() + BUDGET_SECONDS
+    skipped = []
 
     # Grouped by dataflow_id, not iterated row by row: several indicator_map
     # rows can share one dataflow_id (see fetch_indicator()'s docstring), and
     # every one of them has to land in the same snapshot file.
     for dataflow_id, group in imap.groupby("dataflow_id", sort=False):
+        if time.monotonic() > deadline:
+            skipped.append(dataflow_id)
+            continue
         snapshot_id = f"tuik_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
         frames = []
         withdrawn = False
@@ -152,6 +166,11 @@ def main() -> int:
         out_path = write_snapshot(df, "tuik", dataflow_id, snapshot_id=snapshot_id)
         print(f"  saved {len(df)} observations to {out_path}")
 
+    if skipped:
+        raise TimeoutError(
+            f"SDMX budget of {BUDGET_SECONDS // 60} min exhausted; {len(skipped)} dataflow(s) "
+            f"not fetched this run: {', '.join(skipped)}"
+        )
     return 0
 
 

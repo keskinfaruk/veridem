@@ -48,11 +48,12 @@ permissions:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    # Safeguard, not a normal-case budget (a real run takes a few minutes).
-    # Exists so a genuine hang, e.g. TurkStat accepting a connection but
-    # never responding, fails within the hour instead of sitting "running"
+    # Safeguard, not a normal-case budget. TurkStat's SDMX service does
+    # accept a request and then never answer, which is what the shorter
+    # per-request timeout in tuik_client.py handles; this is the outer bound
+    # so a genuine hang fails within the hour instead of sitting "running"
     # for GitHub's 6-hour default and never sending a failure email.
-    timeout-minutes: 20
+    timeout-minutes: 35
 
     steps:
       - name: Checkout
@@ -103,6 +104,9 @@ jobs:
         id: run
         working-directory: src
         env:
+          # Without this Python buffers stdout (the step is not a tty) and a
+          # step that gets killed logs nothing at all about where it was.
+          PYTHONUNBUFFERED: "1"
           TUIK_API_KEY: ${{ secrets.TUIK_API_KEY }}
           BLUESKY_DATA_HANDLE: ${{ secrets.BLUESKY_DATA_HANDLE }}
           BLUESKY_DATA_APP_PASSWORD: ${{ secrets.BLUESKY_DATA_APP_PASSWORD }}
