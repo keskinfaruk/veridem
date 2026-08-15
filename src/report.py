@@ -62,7 +62,9 @@ INDICATOR_LABELS = {
     "POST_NEONATAL_MORTALITY_RATE": "Post-Neonatal Mortality Rate",
     "INTERNAL_MIGRATION_VOLUME": "Internal Migration Volume",
     "INTERNAL_MIGRATION_RATE": "Internal Migration Rate",
-    "TOTAL_POPULATION": "Total Population",
+    # ABPRS counts the population as at 31 December, so the reference date is
+    # stated the same way Eurostat's own 1 January series states its.
+    "TOTAL_POPULATION": "Population (31 December)",
     "NUMBER_OF_MARRIAGES": "Number of Marriages",
     "CRUDE_MARRIAGE_RATE": "Crude Marriage Rate",
     "NUMBER_OF_DIVORCES": "Number of Divorces",

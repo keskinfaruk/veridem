@@ -147,7 +147,7 @@ REGION_END = "<!-- veridem:end -->"
 # longer repeats "Türkiye, TurkStat press release" on every entry.
 SOURCE_CLASS = {"tuik_press": "s-tuik", "tuik": "s-tuik", "eurostat": "s-estat"}
 LEGEND = [
-    ("s-tuik", "TurkStat press releases", "TÜİK haber bültenleri"),
+    ("s-tuik", "TurkStat", "TÜİK"),
     ("s-estat", "Eurostat", "Eurostat"),
 ]
 
@@ -253,12 +253,12 @@ def render_region(cards: list[dict]) -> str:
         '<div class="vd">',
         "<h1 data-en>Indicators</h1>",
         "<h1 data-tr>Göstergeler</h1>",
-        '<p data-en class="text-muted">Current values for every demographic indicator veridem '
+        '<p data-en class="text-muted">Current values for some demographic indicators veridem '
         "watches for Türkiye. Each card is replaced in place when a newer figure is published. "
         'A machine-readable <a href="./changes.xml">Atom feed</a> records each change as it '
         "happens.</p>",
-        '<p data-tr class="text-muted">Veridem\'in Türkiye için izlediği her demografik '
-        "göstergenin güncel değeri. Yeni bir değer yayımlandığında kart yerinde güncellenir. "
+        '<p data-tr class="text-muted">Veridem\'in Türkiye için izlediği bazı demografik '
+        "göstergelerin güncel değerleri. Yeni bir değer yayımlandığında kart yerinde güncellenir. "
         'Değişiklikler ayrıca <a href="./changes.xml">Atom akışına</a> kaydedilir.</p>',
         _legend_html(),
     ]

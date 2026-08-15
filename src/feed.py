@@ -16,7 +16,7 @@ from pathlib import Path
 
 FEED_PATH = Path(__file__).resolve().parent.parent / "changes.xml"
 FEED_URL = "https://faruk.page/veridem/changes.xml"
-SITE_URL = "https://faruk.page/veridem/"
+SITE_URL = "https://faruk.page/veridem/indicators.html"
 MAX_ENTRIES = 200
 
 ATOM_NS = "http://www.w3.org/2005/Atom"
