@@ -270,3 +270,9 @@
 - DATAFLOW WITHDRAWN: DF_DOGUM_SIRA -- Proportion of Births by Birth Order (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
 - DATAFLOW WITHDRAWN: DF_DOGUM_TEMEL_DOG_GOST -- Basic Fertility Indicators (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
 - DATAFLOW WITHDRAWN: DF_DOGUM_YASA_OZEL_DOGHIZ -- Age Specific Fertility Rates (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+
+## 2026-08-17
+
+### New dataflows (1)
+
+- NEW DATAFLOW: DF_ISGUCU_CEYREK_NACE_2_1_ISTIHDAM_C -- Ekonomik Faaliyete Göre İstihdam Edilenler (Nace Rev. 2.1)
