@@ -276,3 +276,16 @@
 ### New dataflows (1)
 
 - NEW DATAFLOW: DF_ISGUCU_CEYREK_NACE_2_1_ISTIHDAM_C -- Ekonomik Faaliyete Göre İstihdam Edilenler (Nace Rev. 2.1)
+
+## 2026-08-18
+
+### New dataflows (8)
+
+- NEW DATAFLOW: DF_BR_BUYUKLUK_GIRISIM_V1 -- Büyüklük Grubuna Göre Girişim Sayısı
+- NEW DATAFLOW: DF_BR_FAALIYET_BUYUKLUK_GIRISIM_IBBS3_09_13_V1 -- Ekonomik Faaliyet ve Büyüklük Grubuna Göre Girişim Sayısı (İBSS 3 Düzeyinde 2009-2013 )
+- NEW DATAFLOW: DF_BR_FAALIYET_BUYUKLUK_GIRISIM_IBBS3_14_18_V1 -- Ekonomik Faaliyet ve Büyüklük Grubuna Göre Girişim Sayısı (İBSS 3 Düzeyinde 2014-2018)
+- NEW DATAFLOW: DF_BR_FAALIYET_BUYUKLUK_GIRISIM_IBBS3_19_23 -- Ekonomik Faaliyet ve Büyüklük Grubuna Göre Girişim Sayısı (İBSS 3 Düzeyinde 2019-2023)
+- NEW DATAFLOW: DF_BR_FAALIYET_BUYUKLUK_GIRISIM_IBBS3_24_28 -- Ekonomik Faaliyet ve Büyüklük Grubuna Göre Girişim Sayısı (İBSS 3 Düzeyinde 2024 ve Sonrası)
+- NEW DATAFLOW: DF_BR_FAALIYET_BUYUKLUK_GIRISIM_TR_IBBS1_2_V1 -- Ekonomik Faaliyet ve Büyüklük Grubuna Göre Girişim Sayısı (TR-İBBS 1-İBBS 2 Düzeylerinde)
+- NEW DATAFLOW: DF_BR_FAALIYET_GIRISIM_ONCE_V1 -- Ekonomik Faaliyete Göre Girişim Sayısı (2020 öncesi)
+- NEW DATAFLOW: DF_BR_FAALIYET_GIRISIM_V1 -- Ekonomik Faaliyete Göre Girişim Sayısı (2020 ve sonrası)
