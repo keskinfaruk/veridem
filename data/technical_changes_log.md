@@ -289,3 +289,12 @@
 - NEW DATAFLOW: DF_BR_FAALIYET_BUYUKLUK_GIRISIM_TR_IBBS1_2_V1 -- Ekonomik Faaliyet ve Büyüklük Grubuna Göre Girişim Sayısı (TR-İBBS 1-İBBS 2 Düzeylerinde)
 - NEW DATAFLOW: DF_BR_FAALIYET_GIRISIM_ONCE_V1 -- Ekonomik Faaliyete Göre Girişim Sayısı (2020 öncesi)
 - NEW DATAFLOW: DF_BR_FAALIYET_GIRISIM_V1 -- Ekonomik Faaliyete Göre Girişim Sayısı (2020 ve sonrası)
+
+## 2026-08-19
+
+### Withdrawn dataflows (4)
+
+- DATAFLOW WITHDRAWN: DF_BR_BUYUKLUK_GIRISIM -- Büyüklük Grubuna Göre Girişim Sayısı (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_BR_FAALIYET_BUYUKLUK_GIRISIM -- Ekonomik Faaliyet ve Büyüklük Grubuna Göre Girişim Sayısı (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_BR_FAALIYET_GIRISIM -- Ekonomik Faaliyete Göre Girişim Sayısı (2020 ve sonrası) (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_BR_FAALIYET_GIRISIM_ONCE -- Ekonomik Faaliyete Göre Girişim Sayısı (2020 öncesi) (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
