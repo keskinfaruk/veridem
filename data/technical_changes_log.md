@@ -298,3 +298,19 @@
 - DATAFLOW WITHDRAWN: DF_BR_FAALIYET_BUYUKLUK_GIRISIM -- Ekonomik Faaliyet ve Büyüklük Grubuna Göre Girişim Sayısı (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
 - DATAFLOW WITHDRAWN: DF_BR_FAALIYET_GIRISIM -- Ekonomik Faaliyete Göre Girişim Sayısı (2020 ve sonrası) (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
 - DATAFLOW WITHDRAWN: DF_BR_FAALIYET_GIRISIM_ONCE -- Ekonomik Faaliyete Göre Girişim Sayısı (2020 öncesi) (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+
+## 2026-08-20
+
+### New dataflows (11)
+
+- NEW DATAFLOW: DF_TUFE_SDMX_TT01 -- Ana harcama gruplarına göre ağırlıklar tüketici fiyat endeksi (TÜFE) ve değişim oranları
+- NEW DATAFLOW: DF_TUFE_SDMX_TT02 -- COICOP 2018 alt sınıflarına göre TÜFE aylık ve yıllık değişim oranları
+- NEW DATAFLOW: DF_TUFE_SDMX_TT03 -- TÜFE ana harcama gruplarının yıllık ve aylık değişim oranları ve genel endeks değişimine katkıları
+- NEW DATAFLOW: DF_TUFE_SDMX_TT04 -- Tüketici fiyat endeksi (TÜFE) mal ve hizmet sepeti ve ağırlıklar
+- NEW DATAFLOW: DF_TUFE_SDMX_TT05 -- Mevsim etkisinden arındırılmış TÜFE göstergeleri
+- NEW DATAFLOW: DF_TUFE_SDMX_TT05_O -- Mevsim etkisinden arındırılmış TÜFE göstergeleri - Revizyon Geçmişi
+- NEW DATAFLOW: DF_TUFE_SDMX_TT06 -- Özel Kapsamlı TÜFE Göstergeleri
+- NEW DATAFLOW: DF_TUFE_SDMX_TT07 -- Tüketici fiyat endeksi seçilmiş maddelere ait ortalama fiyatlar
+- NEW DATAFLOW: DF_TUFE_SDMX_TT08 -- Ana grup ağırlıkları
+- NEW DATAFLOW: DF_TUFE_SDMX_TT09 -- Harcama gruplarına göre endeks sonuçları
+- NEW DATAFLOW: DF_TUFE_SDMX_TT10 -- Tüketici fiyat endeksi ve değişim oranları
