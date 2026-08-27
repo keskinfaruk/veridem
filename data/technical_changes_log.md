@@ -314,3 +314,25 @@
 - NEW DATAFLOW: DF_TUFE_SDMX_TT08 -- Ana grup ağırlıkları
 - NEW DATAFLOW: DF_TUFE_SDMX_TT09 -- Harcama gruplarına göre endeks sonuçları
 - NEW DATAFLOW: DF_TUFE_SDMX_TT10 -- Tüketici fiyat endeksi ve değişim oranları
+
+## 2026-08-27
+
+### New dataflows (9)
+
+- NEW DATAFLOW: DF_UHTI_COGRAFI_C -- Ülke Gruplarına göre Uluslararası Hizmet Ticareti
+- NEW DATAFLOW: DF_UHTI_EKONOMIK_C -- Ekonomik Gruplara göre Uluslararası Hizmet Ticareti
+- NEW DATAFLOW: DF_UHTI_HIZMET_COGRAFI_C -- Hizmet Türlerine ve Coğrafi Kırılımlara göre Uluslararası Hizmet Ticareti
+- NEW DATAFLOW: DF_UHTI_HIZMET_EKONOMIK_C -- Hizmet Türlerine ve Ekonomik Gruplara göre Uluslararası Hizmet Ticareti
+- NEW DATAFLOW: DF_UHTI_HIZMET_TURU_C -- Hizmet Türlerine göre Uluslararası Hizmet Ticareti
+- NEW DATAFLOW: DF_YAPISAL_EFGTG_BUYUKLUK_NACEREV21 -- Ekonomik Faaliyet ve Büyüklük Grubuna Göre Temel Göstergeler (NACE Rev.2.1)
+- NEW DATAFLOW: DF_YAPISAL_EFGTG_IMALAT_TEKNO_NACEREV21 -- İmalat Sanayinde Teknoloji Düzeyine Göre Temel Göstergeler (NACE Rev.2.1)
+- NEW DATAFLOW: DF_YAPISAL_EFGTG_NACEREV21 -- Ekonomik Faaliyetlere Göre Temel Göstergeler (NACE Rev.2.1)
+- NEW DATAFLOW: DF_YAPISAL_MMIGSYH_NACEREV21 -- Yıllara Göre Maddi Mallara İlişkin Gayri Safi Yatırım Harcama Türleri (NACE Rev.2.1)
+
+### Withdrawn dataflows (5)
+
+- DATAFLOW WITHDRAWN: DF_UHTI_COGRAFI -- International Trade in Services by Geographical Breakdowns (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_UHTI_EKONOMIK -- International Trade in Services by Economic Groups (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_UHTI_HIZMET_COGRAFI -- International Trade in Services by Type of Services and Geographical Breakdowns (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_UHTI_HIZMET_EKONOMIK -- International Trade in Services by Type of Services and Economic Groups (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_UHTI_HIZMET_TURU -- International Trade in Services by Type of Services (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
