@@ -336,3 +336,10 @@
 - DATAFLOW WITHDRAWN: DF_UHTI_HIZMET_COGRAFI -- International Trade in Services by Type of Services and Geographical Breakdowns (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
 - DATAFLOW WITHDRAWN: DF_UHTI_HIZMET_EKONOMIK -- International Trade in Services by Type of Services and Economic Groups (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
 - DATAFLOW WITHDRAWN: DF_UHTI_HIZMET_TURU -- International Trade in Services by Type of Services (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+
+## 2026-08-28
+
+### Withdrawn dataflows (2)
+
+- DATAFLOW WITHDRAWN: DF_TUFE_SDMX_TT05_O -- Mevsim etkisinden arındırılmış TÜFE göstergeleri - Revizyon Geçmişi (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_YAPISAL_MMIGSYH_NACEREV21 -- Yıllara Göre Maddi Mallara İlişkin Gayri Safi Yatırım Harcama Türleri (NACE Rev.2.1) (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
