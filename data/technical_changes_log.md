@@ -343,3 +343,10 @@
 
 - DATAFLOW WITHDRAWN: DF_TUFE_SDMX_TT05_O -- Mevsim etkisinden arındırılmış TÜFE göstergeleri - Revizyon Geçmişi (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
 - DATAFLOW WITHDRAWN: DF_YAPISAL_MMIGSYH_NACEREV21 -- Yıllara Göre Maddi Mallara İlişkin Gayri Safi Yatırım Harcama Türleri (NACE Rev.2.1) (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+
+## 2026-08-31
+
+### Withdrawn dataflows (2)
+
+- DATAFLOW WITHDRAWN: DF_DOLAYLI_ARGE_BUYUKLUK_GRUP_V2 -- Enterprises benefiting from indirect R&D tax incentives by size class (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_DOLAYLI_ARGE_GIRISIM_EKONOMIK_FAAL_V2 -- Enterprises benefiting from indirect R&D tax incentives by economic activities (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
