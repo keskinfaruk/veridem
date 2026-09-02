@@ -350,3 +350,13 @@
 
 - DATAFLOW WITHDRAWN: DF_DOLAYLI_ARGE_BUYUKLUK_GRUP_V2 -- Enterprises benefiting from indirect R&D tax incentives by size class (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
 - DATAFLOW WITHDRAWN: DF_DOLAYLI_ARGE_GIRISIM_EKONOMIK_FAAL_V2 -- Enterprises benefiting from indirect R&D tax incentives by economic activities (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+
+## 2026-09-02
+
+### New press themes (1)
+
+- NEW PRESS THEME: Annual and Regional Labour Force Statistics -- Employment, Unemployment and Wages
+
+### Withdrawn press themes (1)
+
+- PRESS THEME WITHDRAWN: Annual and Regional Labor Force Statistics -- Employment, Unemployment and Wages -- no longer in TÜİK's press catalogue; any watched tuik_press indicator sourced from it will fail to fetch until removed from fetch_tuik_press_indicators.py or TÜİK republishes it
