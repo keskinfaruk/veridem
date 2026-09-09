@@ -375,3 +375,14 @@
 ### Withdrawn press themes (1)
 
 - PRESS THEME WITHDRAWN: Annual and Regional Labor Force Statistics -- Employment, Unemployment and Wages -- no longer in TÜİK's press catalogue; any watched tuik_press indicator sourced from it will fail to fetch until removed from fetch_tuik_press_indicators.py or TÜİK republishes it
+
+## 2026-09-09
+
+### New dataflows (6)
+
+- NEW DATAFLOW: DF_BUY_GRUP_EKO_FAALIYET_V1 -- Ekonomik faaliyete ve büyüklük grubuna göre sosyal medya uygulamalarını kullanan girişimlerin oranı (Nace Rev 2 .1)(%)
+- NEW DATAFLOW: DF_BUY_GRUP_EKO_FAAL_MAL_HIZMET_SATIS_V1 -- Ekonomik faaliyet ve büyüklük grubuna göre web sitesi ya da mobil uygulamalar üzerinden veya elektronik veri alışverişi ile mal/hizmet satışı yapan girişimlerin oranı (Nace Rev 2 .1)(%)
+- NEW DATAFLOW: DF_ERP_CRM_V1 -- Ekonomik faaliyete ve büyüklük grubuna göre kurumsal kaynak planlaması (ERP), müşteri ilişkileri yönetimi (CRM) ve iş zekası (BI) yazılımı kullanan girişimlerin oranı (Nace Rev 2 .1)(%)
+- NEW DATAFLOW: DF_INTERNET_ERISIM_SAHIP_V1 -- Ekonomik faaliyete, büyüklük grubuna ve genişbant bağlantı türüne göre internet erişimine sahip girişimlerin oranı (Nace Rev 2 .1)(%)
+- NEW DATAFLOW: DF_INTERNET_ERISIM_V1 -- Ekonomik faaliyet ve büyüklük grubuna göre internet erişimine sahip olan girişimlerin oranı (Nace Rev 2 .1)(%)
+- NEW DATAFLOW: DF_WEB_SITE_SAHIP_GIRISIM_ORAN_V1 -- Ekonomik faaliyet ve büyüklük grubuna göre web sitesi sahibi girişimlerin oranı (Nace Rev 2 .1)(%)
