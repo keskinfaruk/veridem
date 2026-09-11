@@ -386,3 +386,12 @@
 - NEW DATAFLOW: DF_INTERNET_ERISIM_SAHIP_V1 -- Ekonomik faaliyete, büyüklük grubuna ve genişbant bağlantı türüne göre internet erişimine sahip girişimlerin oranı (Nace Rev 2 .1)(%)
 - NEW DATAFLOW: DF_INTERNET_ERISIM_V1 -- Ekonomik faaliyet ve büyüklük grubuna göre internet erişimine sahip olan girişimlerin oranı (Nace Rev 2 .1)(%)
 - NEW DATAFLOW: DF_WEB_SITE_SAHIP_GIRISIM_ORAN_V1 -- Ekonomik faaliyet ve büyüklük grubuna göre web sitesi sahibi girişimlerin oranı (Nace Rev 2 .1)(%)
+
+## 2026-09-11
+
+### New dataflows (4)
+
+- NEW DATAFLOW: DF_BILANCO_HESAPLAR_NACEREV21 -- Ekonomik Faaliyetlere ve Yıllara Göre Firmaların Bilanço Hesapları (NACE Rev.2.1)
+- NEW DATAFLOW: DF_GELIR_TABLOSU_NACEREV21 -- Ekonomik Faaliyetlere ve Yıllara Göre Firmaların Gelir Tablosu (NACE Rev.2.1)
+- NEW DATAFLOW: DF_SEKTOR_BILANCO_KOBI_NACEREV21 -- Ekonomik Faaliyetlere ve Yıllara göre Temel Göstergeler(Kobi Büyüklüğü Eklenmiş) (NACE Rev.2.1)
+- NEW DATAFLOW: DF_SEKTOR_BILANCO_TEMEL_NACEREV21 -- Ekonomik Faaliyetlere Göre Temel Göstergeler (NACE Rev.2.1)
