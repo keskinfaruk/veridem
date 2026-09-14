@@ -395,3 +395,9 @@
 - NEW DATAFLOW: DF_GELIR_TABLOSU_NACEREV21 -- Ekonomik Faaliyetlere ve Yıllara Göre Firmaların Gelir Tablosu (NACE Rev.2.1)
 - NEW DATAFLOW: DF_SEKTOR_BILANCO_KOBI_NACEREV21 -- Ekonomik Faaliyetlere ve Yıllara göre Temel Göstergeler(Kobi Büyüklüğü Eklenmiş) (NACE Rev.2.1)
 - NEW DATAFLOW: DF_SEKTOR_BILANCO_TEMEL_NACEREV21 -- Ekonomik Faaliyetlere Göre Temel Göstergeler (NACE Rev.2.1)
+
+## 2026-09-14
+
+### New dataflows (1)
+
+- NEW DATAFLOW: DF_BESERI_KALKINMA_ENDEKS -- İllere göre beşeri kalkınma endeksi, alt endeksleri ve değişim oranları
