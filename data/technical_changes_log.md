@@ -420,3 +420,12 @@
 - DATAFLOW WITHDRAWN: DF_SEKTOR_BILANCO_KOBI_V1 -- Ekonomik Faaliyetlere ve Yıllara göre Temel Göstergeler(Kobi Büyüklüğü Eklenmiş) (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
 - DATAFLOW WITHDRAWN: DF_SEKTOR_BILANCO_TEMEL_NACEREV21 -- Ekonomik Faaliyetlere Göre Temel Göstergeler (NACE Rev.2.1) (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
 - DATAFLOW WITHDRAWN: DF_SEKTOR_BILANCO_TEMEL_V1 -- Ekonomik Faaliyetlere Göre Temel Göstergeler (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+
+## 2026-09-16
+
+### New dataflows (4)
+
+- NEW DATAFLOW: DF_BILANCO_HESAPLAR_NACEREV21 -- Ekonomik Faaliyetlere ve Yıllara Göre Firmaların Bilanço Hesapları (NACE Rev.2.1)
+- NEW DATAFLOW: DF_GELIR_TABLOSU_NACEREV21 -- Ekonomik Faaliyetlere ve Yıllara Göre Firmaların Gelir Tablosu (NACE Rev.2.1)
+- NEW DATAFLOW: DF_SEKTOR_BILANCO_KOBI_NACEREV21 -- Ekonomik Faaliyetlere ve Yıllara göre Temel Göstergeler(Kobi Büyüklüğü Eklenmiş) (NACE Rev.2.1)
+- NEW DATAFLOW: DF_SEKTOR_BILANCO_TEMEL_NACEREV21 -- Ekonomik Faaliyetlere Göre Temel Göstergeler (NACE Rev.2.1)
