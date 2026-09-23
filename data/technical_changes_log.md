@@ -429,3 +429,9 @@
 - NEW DATAFLOW: DF_GELIR_TABLOSU_NACEREV21 -- Ekonomik Faaliyetlere ve Yıllara Göre Firmaların Gelir Tablosu (NACE Rev.2.1)
 - NEW DATAFLOW: DF_SEKTOR_BILANCO_KOBI_NACEREV21 -- Ekonomik Faaliyetlere ve Yıllara göre Temel Göstergeler(Kobi Büyüklüğü Eklenmiş) (NACE Rev.2.1)
 - NEW DATAFLOW: DF_SEKTOR_BILANCO_TEMEL_NACEREV21 -- Ekonomik Faaliyetlere Göre Temel Göstergeler (NACE Rev.2.1)
+
+## 2026-09-23
+
+### Withdrawn dataflows (1)
+
+- DATAFLOW WITHDRAWN: DF_GENEL_DEVLET_ANA_BILESENLERI_CEYREKLIK -- Genel Devlet Ana bileşenleri, Çeyreklik (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
