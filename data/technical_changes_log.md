@@ -435,3 +435,10 @@
 ### Withdrawn dataflows (1)
 
 - DATAFLOW WITHDRAWN: DF_GENEL_DEVLET_ANA_BILESENLERI_CEYREKLIK -- Genel Devlet Ana bileşenleri, Çeyreklik (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+
+## 2026-09-26
+
+### New dataflows (2)
+
+- NEW DATAFLOW: DF_LM_B_IIB_SURE -- Lisans mezunlarının bölümlere göre ilk iş bulma süresi
+- NEW DATAFLOW: DF_LM_EOA_IIB_SURE -- Lisans mezunlarının eğitim ve öğretim alanlarına göre ilk iş bulma süresi
