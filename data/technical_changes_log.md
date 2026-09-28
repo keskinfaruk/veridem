@@ -442,3 +442,28 @@
 
 - NEW DATAFLOW: DF_LM_B_IIB_SURE -- Lisans mezunlarının bölümlere göre ilk iş bulma süresi
 - NEW DATAFLOW: DF_LM_EOA_IIB_SURE -- Lisans mezunlarının eğitim ve öğretim alanlarına göre ilk iş bulma süresi
+
+## 2026-09-28
+
+### New dataflows (14)
+
+- NEW DATAFLOW: DF_GENEL_DEVLET_ACIK_FAZLA_BORC_V2 -- Devletin Açık/Fazla ve Borç Düzeyleri
+- NEW DATAFLOW: DF_GENEL_DEVLET_ANA_BILESEN_V3 -- Genel Devlet Ana Bileşenleri
+- NEW DATAFLOW: DF_GENEL_DEVLET_VERGI_SOSYAL_KATKI_V2 -- Genel Devlet Vergi ve Sosyal Katkı Gelirleri
+- NEW DATAFLOW: DF_LM_KIO -- Lisans mezunlarının eğitim ve öğretim alanlarına göre kayıtlı istihdam oranı
+- NEW DATAFLOW: DF_LM_KIO_BOLUM -- Lisans mezunlarının bölümlere göre kayıtlı istihdam oranı
+- NEW DATAFLOW: DF_LSNS_MEZ_BOL_AOK -- Lisans mezunlarının bölümlere göre aylık ortalama kazanç grupları
+- NEW DATAFLOW: DF_LSNS_MEZ_EOA_UBCO -- Lisans mezunlarının eğitim ve öğretim alanları ile uyumlu bir meslek grubunda çalışma oran
+- NEW DATAFLOW: DF_ONLISANS_MEZ_EOA_KIO -- Ön lisans mezunlarının eğitim ve öğretim alanlarına göre kayıtlı istihdam oranı
+- NEW DATAFLOW: DF_ONLSNS_MEZ_AOK -- Ön lisans mezunlarının bölümlere göre aylık ortalama kazanç grupları
+- NEW DATAFLOW: DF_ONLSNS_MEZ_BOL_IIB_SURE -- Ön lisans mezunlarının bölümlere göre ilk iş bulma süresi
+- NEW DATAFLOW: DF_ONLSNS_MEZ_EOA_IIB_SURE -- Ön lisans mezunlarının eğitim ve öğretim alanlarına göre ilk iş bulma süresi
+- NEW DATAFLOW: DF_ONLSNS_MEZ_EOA_UBMGCO -- Ön lisans mezunlarının eğitim ve öğretim alanları ile uyumlu bir meslek grubunda çalışma oranı
+- NEW DATAFLOW: DF_ONL_MZN_BOL_KIO -- Ön lisans mezunlarının bölümlere göre kayıtlı istihdam oranı
+- NEW DATAFLOW: DF_TUFE_SDMX_2003 -- Tüketici fiyat endeksi ve değişim oranları
+
+### Withdrawn dataflows (3)
+
+- DATAFLOW WITHDRAWN: DF_GENEL_DEVLET_ACIK_FAZLA_BORC_1 -- Devletin Açık/Fazla ve Borç Düzeyleri (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_GENEL_DEVLET_ANA_BILESEN_V2 -- Genel Devlet Ana Bileşenleri (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_GENEL_DEVLET_VERGI_SOSYAL_KATKI_1 -- Genel Devlet Vergi ve Sosyal Katkı Gelirleri (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
