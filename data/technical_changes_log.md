@@ -467,3 +467,9 @@
 - DATAFLOW WITHDRAWN: DF_GENEL_DEVLET_ACIK_FAZLA_BORC_1 -- Devletin Açık/Fazla ve Borç Düzeyleri (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
 - DATAFLOW WITHDRAWN: DF_GENEL_DEVLET_ANA_BILESEN_V2 -- Genel Devlet Ana Bileşenleri (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
 - DATAFLOW WITHDRAWN: DF_GENEL_DEVLET_VERGI_SOSYAL_KATKI_1 -- Genel Devlet Vergi ve Sosyal Katkı Gelirleri (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+
+## 2026-09-29
+
+### New dataflows (1)
+
+- NEW DATAFLOW: DF_EKONOMIK_FAALIYET_TEMEL_GOSTERGE -- Ekonomik faaliyete göre istihdam ve temel göstergeler
