@@ -473,3 +473,39 @@
 ### New dataflows (1)
 
 - NEW DATAFLOW: DF_EKONOMIK_FAALIYET_TEMEL_GOSTERGE -- Ekonomik faaliyete göre istihdam ve temel göstergeler
+
+## 2026-09-30
+
+### New dataflows (31)
+
+- NEW DATAFLOW: DF_BANKA_ISTIHDAM_GOSTERGE -- Bankalarda istihdam ve temel göstergeler
+- NEW DATAFLOW: DF_BILANCO_BANKA_ISTIHDAM_GOSTERGE -- Bilanço büyüklük grubuna göre bankalarda istihdam ve temel göstergeler
+- NEW DATAFLOW: DF_BILANCO_FAKTORING_ISTIHDAM_GOSTERGE -- Bilanço büyüklük grubuna göre faktoring şirketleri, varlık yönetim şirketleri, menkul kıymet, gayrimenkul ve girişim sermayesi yatırım ortaklıklarında istihdam ve temel göstergeler
+- NEW DATAFLOW: DF_BILANCO_FINANS_BANKA_ISTIHDAM_GOSTERGE -- Bilanço büyüklük grubuna göre özel finans kurumları / katılım bankalarında istihdam ve temel göstergeler
+- NEW DATAFLOW: DF_BILANCO_FINANS_ISTIHDAM_GOSTERGE -- Bilanço büyüklük grubuna göre finansal kiralama şirketlerinde istihdam ve temel göstergeler
+- NEW DATAFLOW: DF_BILANCO_KREDI_ISTIHDAM_GOSTERGE -- Bilanço Büyüklük Grubuna Göre Kredi Kuruluşlarında İstihdam ve Temel Göstergeler
+- NEW DATAFLOW: DF_BILANCO_MENKUL_ISTIHDAM_GOSTERGE -- Bilanço büyüklük grubuna göre menkul değerler, vadeli işlemler aracılık şirketleri ve döviz bürolarında istihdam ve temel göstergeler
+- NEW DATAFLOW: DF_EKONOMIK_FAALIYET_SERMAYE_SATIS -- Ekonomik Faaliyete Göre Sabit Sermaye Yatırımları ve Satışları
+- NEW DATAFLOW: DF_FINANSAL_ISTIHDAM_ODEME -- Finansal Hizmet Faaliyetlerinde (sigorta ve emeklilik fonları hariç) İstihdam ve Ödemeler
+- NEW DATAFLOW: DF_GIRISIM_BANKA_ISTIHDAM_GOSTERGE -- Girişim büyüklük grubuna göre bankalarda istihdam ve temel göstergeler
+- NEW DATAFLOW: DF_GIRISIM_FAKTORING_ISTIHDAM_GOSTERGE -- Girişim büyüklük grubuna göre faktoring şirketleri, varlık yönetim şirketleri, menkul kıymet, gayrimenkul ve girişim sermayesi yatırım ortaklıklarında istihdam ve temel göstergeler
+- NEW DATAFLOW: DF_GIRISIM_FINANS_BANKA_ISTIHDAM_GOSTERGE -- Girişim büyüklük grubuna göre özel finans kurumları / katılım bankalarında istihdam ve temel göstergeler
+- NEW DATAFLOW: DF_GIRISIM_FINANS_ISTIHDAM_GOSTERGE -- Girişim büyüklük grubuna göre finansal kiralama şirketlerinde istihdam ve temel göstergeler
+- NEW DATAFLOW: DF_GIRISIM_KREDI_ISTIHDAM_GOSTERGE -- Girişim büyüklük grubuna göre kredi kuruluşlarında istihdam ve temel göstergeler
+- NEW DATAFLOW: DF_GIRISIM_MENKUL_ISTIHDAM_GOSTERGE -- Girişim büyüklük grubuna göre menkul değerler, vadeli işlemler aracılık şirketleri ve döviz bürolarında istihdam ve temel göstergeler
+- NEW DATAFLOW: DF_GIRISIM_SIGORTA_ISTIHDAM_GOSTERGE -- Girişim Büyüklük Grubuna Göre Sigorta Şirketlerinde İstihdam ve Temel Göstergeler
+- NEW DATAFLOW: DF_ICGOC_T01 -- Göç etme nedeni ve bitirilen eğitim durumuna göre iller arası göç eden nüfus
+- NEW DATAFLOW: DF_KREDI_ISTIHDAM_ODEME -- Kredi Kuruluşlarında İstihdam ve Ödemeler
+- NEW DATAFLOW: DF_KREDI_SERMAYE_SATIS -- Kredi Kuruluşlarında Sabit Sermaye Yatırımları ve Satışları
+- NEW DATAFLOW: DF_MALI_ISTIHDAM_GOSTERGE -- Mali sektörlerde istihdam ve temel göstergeler
+- NEW DATAFLOW: DF_PRIM_BUYUKLUK_ISTIHDAM_GOSTERGE -- Prim Büyüklük Grubuna Göre Sigorta Şirketlerinde İstihdam ve Temel Göstergeler
+- NEW DATAFLOW: DF_SIGORTA_ISTIHDAM_ODEME -- Sigorta ve Reasürans Şirketlerinde İstihdam ve Ödemeler
+- NEW DATAFLOW: DF_TARKRE_BIL_BUY -- Bilanço büyüklük grubuna göre tüketici finansman ve tasarruf finansman şirketleri, ikrazatçılar ve tarım kredi kooperatiflerinde istihdam ve temel göstergeler
+- NEW DATAFLOW: DF_TARKRE_GIR_BUY -- Girişim büyüklük grubuna göre tüketici finansman ve tasarruf finansman şirketleri, ikrazatçılar ve tarım kredi kooperatiflerinde istihdam ve temel göstergeler
+- NEW DATAFLOW: DF_UGOC_T1 -- İllere ve vatandaşlığa göre Türkiye'ye gelen ve Türkiye'den giden göç
+- NEW DATAFLOW: DF_UGOC_T2 -- Vatandaşlık ülkesine göre Türkiye'ye gelen ve Türkiye'den giden göç
+- NEW DATAFLOW: DF_UGOC_T3 -- Yaş grubu ve cinsiyete göre Türkiye'ye gelen ve Türkiye'den giden göç
+- NEW DATAFLOW: DF_UGOC_T4 -- Türkiye'de ikamet etmeye başladığı yıla, cinsiyete ve yaş grubuna göre yabancı uyruklu nüfus
+- NEW DATAFLOW: DF_UGOC_T5 -- Türkiye'de ikamet etmeye başladığı yıla, cinsiyete ve vatandaşlık ülkesine göre yabancı uyruklu nüfus
+- NEW DATAFLOW: DF_UGOC_T6 -- İllere ve cinsiyete göre Türkiye'ye gelen ve Türkiye'den giden göç
+- NEW DATAFLOW: DF_UGOC_T8 -- İllere Göre Yurt Dışından Gelen Göç, 2000
