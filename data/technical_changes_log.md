@@ -545,3 +545,10 @@
 - NEW DATAFLOW: DF_OLUM_YOOH_C -- Cinsiyete Göre Yaşa Özel Ölüm Hızı
 - NEW DATAFLOW: DF_TEMEL_DOGUM_OLUM_C -- Temel Doğurganlık ve Ölümlülük Göstergeleri
 - NEW DATAFLOW: DF_TEMEL_OLUMLULUK_C -- Temel Ölümlülük Göstergeleri
+
+## 2026-10-02
+
+### New dataflows (2)
+
+- NEW DATAFLOW: DF_EOA_CIN_YOBGO -- Eğitim ve öğretim alanlarına ve cinsiyete göre yükseköğretim mezunlarının beyin göçü oranı
+- NEW DATAFLOW: DF_IL_CINS_YOBGO -- İllere ve cinsiyete göre yükseköğretim beyin göçü oranı
