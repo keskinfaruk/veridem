@@ -562,3 +562,13 @@
 ### Withdrawn dataflows (1)
 
 - DATAFLOW WITHDRAWN: DF_IL_CINS_YOBGO -- İllere ve cinsiyete göre yükseköğretim beyin göçü oranı (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+
+## 2026-10-06
+
+### New dataflows (1)
+
+- NEW DATAFLOW: DF_KURUMSAL_SEKTOR_HESAPLARI_CARI_FIYATLARLA_V2 -- Kurumsal Sektör Hesapları, Cari Fiyatlarla
+
+### Withdrawn dataflows (1)
+
+- DATAFLOW WITHDRAWN: DF_KURUMSAL_SEKTOR_HESAPLARI_CARI_FIYATLARLA_V1 -- Institutional Sector Accounts, Current Prices (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
