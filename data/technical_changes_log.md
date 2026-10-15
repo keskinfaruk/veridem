@@ -578,3 +578,9 @@
 ### Withdrawn dataflows (1)
 
 - DATAFLOW WITHDRAWN: DF_EOA_CIN_YOBGO -- Eğitim ve öğretim alanlarına ve cinsiyete göre yükseköğretim mezunlarının beyin göçü oranı (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+
+## 2026-10-15
+
+### New dataflows (1)
+
+- NEW DATAFLOW: DF_KBS -- Ortalama Aylık Brüt Kazanç (TL)
