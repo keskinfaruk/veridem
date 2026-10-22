@@ -584,3 +584,10 @@
 ### New dataflows (1)
 
 - NEW DATAFLOW: DF_KBS -- Ortalama Aylık Brüt Kazanç (TL)
+
+## 2026-10-22
+
+### New dataflows (2)
+
+- NEW DATAFLOW: DF_SANAYI_ENERJI_YILLIK_NIHAI_TUKETIM_ORJ_V1 -- Sanayi sektöründe kullanılan enerji kaynaklarının yıllık toplam nihai enerji tüketim miktarları (orijinal birimler)
+- NEW DATAFLOW: DF_SANAYI_ENERJI_YILLIK_NIHAI_TUKETIM_TJ -- Sanayi sektöründe kullanılan enerji kaynaklarının yıllık toplam nihai enerji tüketim miktarları (Terajul)
