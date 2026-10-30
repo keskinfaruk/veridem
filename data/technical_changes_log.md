@@ -591,3 +591,9 @@
 
 - NEW DATAFLOW: DF_SANAYI_ENERJI_YILLIK_NIHAI_TUKETIM_ORJ_V1 -- Sanayi sektöründe kullanılan enerji kaynaklarının yıllık toplam nihai enerji tüketim miktarları (orijinal birimler)
 - NEW DATAFLOW: DF_SANAYI_ENERJI_YILLIK_NIHAI_TUKETIM_TJ -- Sanayi sektöründe kullanılan enerji kaynaklarının yıllık toplam nihai enerji tüketim miktarları (Terajul)
+
+## 2026-10-30
+
+### New dataflows (1)
+
+- NEW DATAFLOW: DF_SATIS_SEKLI_DURUMU_ILCE -- Satış Durumuna ve Satış Şekline Göre Satış Sayıları (İlçe)
