@@ -597,3 +597,35 @@
 ### New dataflows (1)
 
 - NEW DATAFLOW: DF_SATIS_SEKLI_DURUMU_ILCE -- Satış Durumuna ve Satış Şekline Göre Satış Sayıları (İlçe)
+
+## 2026-11-02
+
+### Withdrawn dataflows (27)
+
+- DATAFLOW WITHDRAWN: DF_E_OLUM_IL_CINS_AY_C -- İl, Cinsiyet ve Aya Göre Ölümler, 2001-2008 (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_E_OLUM_IL_CINS_YASGR_C -- İl, Cinsiyet ve Yaş Grubuna Göre Ölümler, 2001-2008 (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_E_OLUM_IL_GUNLUK_C -- İl ve Cinsiyete Göre Günlük Bebek Ölümleri, 2001-2008 (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_E_OLUM_YASGR_CINS_MEDENI_C -- Yaş Grubu, Cinsiyet ve Yasal Medeni Duruma Göre Ölümler, 2001-2008 (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_E_OLUM_YAS_CINS_C -- Yaş ve Cinsiyete Göre Ölümler, 2001-2008 (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_INTIHAR_EGITIM_CINS_C -- Eğitim Durumu ve Cinsiyete Göre İntiharlar (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_INTIHAR_IL_IKAMET_CINS_C -- İkamet İli ve Cinsiyete Göre İntiharlar (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_INTIHAR_IL_SEKIL_C -- İl ve Şekline Göre İntiharlar (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_INTIHAR_IS_KIH_C -- İntihar Sayısı ve Kaba İntihar Hızı (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_INTIHAR_MEDENI_CINS_C -- Yasal Medeni Durum ve Cinsiyete Göre İntiharlar (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_INTIHAR_YASGR_CINS_C -- Yaş Grubu ve Cinsiyete Göre İntiharlar (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_INTIHAR_YOIH_CINS_C -- Cinsiyete Göre Yaşa Özel İntihar Hızı (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_OLUM_90_NEDEN_CINS_C -- Ölüm Nedeni ve Cinsiyete Göre Ölümler (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_OLUM_BEBEK_ANNEBABA_EGT_C -- Anne ve Babanın Eğitim Durumuna Göre Bebek Ölümleri (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_OLUM_BOH_IBBS1_C -- İstatistiki Bölge Birimleri Sınıflaması 1. Düzey ve Cinsiyete Göre Bebek Ölüm Hızı (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_OLUM_IL_BOH_C -- İllere Göre Bebek Ölüm Hızı (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_OLUM_IL_BYAOH_C -- İllere Göre Beş Yaş Altı Ölüm Hızı (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_OLUM_IL_CINS_AY_C -- İl, Cinsiyet ve Aya Göre Ölümler (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_OLUM_IL_GUNLUK_C -- İl ve Cinsiyete Göre Günlük Bebek Ölümleri (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_OLUM_IL_ILCE_CINS_C -- İl, İlçe ve Cinsiyete Göre Ölümler (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_OLUM_IL_NEDEN_C -- İl ve Seçilmiş Ölüm Nedenlerine Göre Ölümler (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_OLUM_UYRUK_C -- Uyruğa Göre Ölümler (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_OLUM_YASGR_CINS_MEDENI_C -- Yaş Grubu, Cinsiyet ve Yasal Medeni Duruma Göre Ölümler (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_OLUM_YASGR_DOGYER_CINS_C -- Yaş Grubu, Doğduğu Ülke ve Cinsiyete Göre Ölümler (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_OLUM_YASGR_EGT_C -- Yaş Grubu, Cinsiyet ve Eğitim Durumuna Göre Ölümler (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_OLUM_YOOH_C -- Cinsiyete Göre Yaşa Özel Ölüm Hızı (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_TEMEL_DOGUM_OLUM_C -- Temel Doğurganlık ve Ölümlülük Göstergeleri (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
