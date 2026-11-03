@@ -629,3 +629,11 @@
 - DATAFLOW WITHDRAWN: DF_OLUM_YASGR_EGT_C -- Yaş Grubu, Cinsiyet ve Eğitim Durumuna Göre Ölümler (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
 - DATAFLOW WITHDRAWN: DF_OLUM_YOOH_C -- Cinsiyete Göre Yaşa Özel Ölüm Hızı (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
 - DATAFLOW WITHDRAWN: DF_TEMEL_DOGUM_OLUM_C -- Temel Doğurganlık ve Ölümlülük Göstergeleri (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+
+## 2026-11-03
+
+### Withdrawn dataflows (3)
+
+- DATAFLOW WITHDRAWN: DF_MUZE_ESER_SAY -- Müzelerdeki Eser Sayısı (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_MUZE_ORENYER_ZYARETCI -- Müze ve Ören Yeri Ziyaretçi Sayısı (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+- DATAFLOW WITHDRAWN: DF_MUZE_SAYISI_V3 -- Number of Museums (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
