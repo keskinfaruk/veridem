@@ -637,3 +637,35 @@
 - DATAFLOW WITHDRAWN: DF_MUZE_ESER_SAY -- Müzelerdeki Eser Sayısı (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
 - DATAFLOW WITHDRAWN: DF_MUZE_ORENYER_ZYARETCI -- Müze ve Ören Yeri Ziyaretçi Sayısı (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
 - DATAFLOW WITHDRAWN: DF_MUZE_SAYISI_V3 -- Number of Museums (was version 1.0) -- no longer in TÜİK's catalogue; any watched indicator on it will fail to fetch until removed from data/indicator_map.csv or TÜİK republishes it
+
+## 2026-11-04
+
+### New dataflows (27)
+
+- NEW DATAFLOW: DF_E_OLUM_IL_CINS_AY_C -- İl, Cinsiyet ve Aya Göre Ölümler, 2001-2008
+- NEW DATAFLOW: DF_E_OLUM_IL_CINS_YASGR_C -- İl, Cinsiyet ve Yaş Grubuna Göre Ölümler, 2001-2008
+- NEW DATAFLOW: DF_E_OLUM_IL_GUNLUK_C -- İl ve Cinsiyete Göre Günlük Bebek Ölümleri, 2001-2008
+- NEW DATAFLOW: DF_E_OLUM_YASGR_CINS_MEDENI_C -- Yaş Grubu, Cinsiyet ve Yasal Medeni Duruma Göre Ölümler, 2001-2008
+- NEW DATAFLOW: DF_E_OLUM_YAS_CINS_C -- Yaş ve Cinsiyete Göre Ölümler, 2001-2008
+- NEW DATAFLOW: DF_INTIHAR_EGITIM_CINS_C -- Eğitim Durumu ve Cinsiyete Göre İntiharlar
+- NEW DATAFLOW: DF_INTIHAR_IL_IKAMET_CINS_C -- İkamet İli ve Cinsiyete Göre İntiharlar
+- NEW DATAFLOW: DF_INTIHAR_IL_SEKIL_C -- İl ve Şekline Göre İntiharlar
+- NEW DATAFLOW: DF_INTIHAR_IS_KIH_C -- İntihar Sayısı ve Kaba İntihar Hızı
+- NEW DATAFLOW: DF_INTIHAR_MEDENI_CINS_C -- Yasal Medeni Durum ve Cinsiyete Göre İntiharlar
+- NEW DATAFLOW: DF_INTIHAR_YASGR_CINS_C -- Yaş Grubu ve Cinsiyete Göre İntiharlar
+- NEW DATAFLOW: DF_INTIHAR_YOIH_CINS_C -- Cinsiyete Göre Yaşa Özel İntihar Hızı
+- NEW DATAFLOW: DF_OLUM_90_NEDEN_CINS_C -- Ölüm Nedeni ve Cinsiyete Göre Ölümler
+- NEW DATAFLOW: DF_OLUM_BEBEK_ANNEBABA_EGT_C -- Anne ve Babanın Eğitim Durumuna Göre Bebek Ölümleri
+- NEW DATAFLOW: DF_OLUM_BOH_IBBS1_C -- İstatistiki Bölge Birimleri Sınıflaması 1. Düzey ve Cinsiyete Göre Bebek Ölüm Hızı
+- NEW DATAFLOW: DF_OLUM_IL_BOH_C -- İllere Göre Bebek Ölüm Hızı
+- NEW DATAFLOW: DF_OLUM_IL_BYAOH_C -- İllere Göre Beş Yaş Altı Ölüm Hızı
+- NEW DATAFLOW: DF_OLUM_IL_CINS_AY_C -- İl, Cinsiyet ve Aya Göre Ölümler
+- NEW DATAFLOW: DF_OLUM_IL_GUNLUK_C -- İl ve Cinsiyete Göre Günlük Bebek Ölümleri
+- NEW DATAFLOW: DF_OLUM_IL_ILCE_CINS_C -- İl, İlçe ve Cinsiyete Göre Ölümler
+- NEW DATAFLOW: DF_OLUM_IL_NEDEN_C -- İl ve Seçilmiş Ölüm Nedenlerine Göre Ölümler
+- NEW DATAFLOW: DF_OLUM_UYRUK_C -- Uyruğa Göre Ölümler
+- NEW DATAFLOW: DF_OLUM_YASGR_CINS_MEDENI_C -- Yaş Grubu, Cinsiyet ve Yasal Medeni Duruma Göre Ölümler
+- NEW DATAFLOW: DF_OLUM_YASGR_DOGYER_CINS_C -- Yaş Grubu, Doğduğu Ülke ve Cinsiyete Göre Ölümler
+- NEW DATAFLOW: DF_OLUM_YASGR_EGT_C -- Yaş Grubu, Cinsiyet ve Eğitim Durumuna Göre Ölümler
+- NEW DATAFLOW: DF_OLUM_YOOH_C -- Cinsiyete Göre Yaşa Özel Ölüm Hızı
+- NEW DATAFLOW: DF_TEMEL_DOGUM_OLUM_C -- Temel Doğurganlık ve Ölümlülük Göstergeleri
