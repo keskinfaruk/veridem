@@ -669,3 +669,15 @@
 - NEW DATAFLOW: DF_OLUM_YASGR_EGT_C -- Yaş Grubu, Cinsiyet ve Eğitim Durumuna Göre Ölümler
 - NEW DATAFLOW: DF_OLUM_YOOH_C -- Cinsiyete Göre Yaşa Özel Ölüm Hızı
 - NEW DATAFLOW: DF_TEMEL_DOGUM_OLUM_C -- Temel Doğurganlık ve Ölümlülük Göstergeleri
+
+## 2026-11-06
+
+### New dataflows (7)
+
+- NEW DATAFLOW: DF_INTIHAR_IL_CINS_C -- İl ve Cinsiyete Göre İntiharlar
+- NEW DATAFLOW: DF_INTIHAR_IL_NEDEN_C -- İl ve Nedene Göre İntiharlar
+- NEW DATAFLOW: DF_INTIHAR_IL_YASGR_C -- İl ve Yaş Grubuna Göre İntiharlar
+- NEW DATAFLOW: DF_INTIHAR_KIH_IL_C -- İllere Göre Kaba İntihar Hızı
+- NEW DATAFLOW: DF_INTIHAR_NEDEN_CINS_C -- Neden ve Cinsiyete Göre İntiharlar
+- NEW DATAFLOW: DF_INTIHAR_SEKIL_CINS_C -- Şekline ve Cinsiyete Göre İntiharlar
+- NEW DATAFLOW: DF_OLUM_YAS_CINS_C -- Yaş ve Cinsiyete Göre Ölümler
